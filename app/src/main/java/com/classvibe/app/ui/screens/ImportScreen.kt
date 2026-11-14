@@ -116,13 +116,33 @@ fun ImportScreen(
         uri?.let { context.contentResolver.openOutputStream(it)?.use { out -> out.write(ExamCsvParser.TEMPLATE.toByteArray()) } }
     }
 
+    var cameraTips by remember { mutableStateOf(false) }
+    if (cameraTips) {
+        AlertDialog(
+            onDismissRequest = { cameraTips = false },
+            title = { Text("📸 For a perfect photo") },
+            text = {
+                Text(
+                    "• Hold the phone straight above the timetable (not at an angle)\n" +
+                        "• Fit the whole table in the frame with a little border\n" +
+                        "• Bright, even light – avoid your own shadow and glare\n" +
+                        "• Tap to focus so the text is sharp\n\n" +
+                        "Next you'll get an auto-crop step; shadows and tilt are fixed automatically.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = { TextButton(onClick = { cameraTips = false; camera.launch(newCameraUri()) }) { Text("Open camera") } },
+            dismissButton = { TextButton(onClick = { cameraTips = false }) { Text("Cancel") } }
+        )
+    }
+
     Box(Modifier.fillMaxSize()) {
         when (state.stage) {
             ImportStage.PICK -> PickerContent(
                 error = state.error,
                 onCsv = { csvPicker.launch(CSV_TYPES) },
                 onImages = { imagePicker.launch(IMAGE_TYPES) },
-                onCamera = { camera.launch(newCameraUri()) },
+                onCamera = { cameraTips = true },
                 onPaste = { onPasteText(clipboard.getText()?.text.orEmpty()) },
                 onSample = onLoadSample,
                 onManual = onAddDraft,

@@ -101,6 +101,36 @@ class ClassVibeRepository(private val context: Context) {
         NowNextWidget.requestUpdate(context)
     }
 
+    suspend fun addHolidays(list: List<Holiday>) {
+        if (list.isEmpty()) return
+        holidays.insertAll(list.map { it.copy(id = 0) })
+        NowNextWidget.requestUpdate(context)
+    }
+
+    /** Applies a QR merge plan: only adds things, never changes existing data. */
+    suspend fun applyMerge(plan: MergePlan, clashesToAdd: List<ClassSchedule>, includeAttendance: Boolean, today: java.time.LocalDate) {
+        val toAdd = plan.newClasses + clashesToAdd
+        if (toAdd.isNotEmpty()) saveClasses(toAdd, replace = false)
+        if (plan.newExams.isNotEmpty()) saveExams(plan.newExams.map { it.copy(createdEpochDay = today.toEpochDay()) })
+        addHolidays(plan.newHolidays)
+        AppSettings.update(context) { p ->
+            plan.setSemesterStart?.let { p[AppSettings.Keys.SEM_START] = it }
+            plan.setSemesterEnd?.let { p[AppSettings.Keys.SEM_END] = it }
+        }
+        plan.newSubjects.forEach { AppSettings.addCustomSubject(context, it) }
+        if (includeAttendance && plan.attendance.isNotEmpty()) {
+            val mine = classes.getAll()
+            plan.attendance.forEach { a ->
+                val c = ShareMerge.matchClass(a, mine) ?: return@forEach
+                if (attendance.get(c.id, a.epochDay) == null) {
+                    attendance.upsert(AttendanceRecord(classId = c.id, course = c.course, epochDay = a.epochDay, status = a.status))
+                }
+            }
+        }
+        ReminderScheduler.scheduleGlobal(context)
+        NowNextWidget.requestUpdate(context)
+    }
+
     // ---------- Custom messages ----------
 
     suspend fun addCustomMessage(category: String, text: String) {

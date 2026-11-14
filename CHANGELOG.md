@@ -3,6 +3,23 @@
 All notable changes to ClassVibe. Versions follow `MAJOR.MINOR.PATCH`.
 The release workflow copies the section for each tag into the GitHub Release notes.
 
+## [1.2.0] – Sharp Eye 🔍
+
+### Added
+- **App shortcuts** – long-press the icon: 🔔 Next class, 📅 Today & attendance, 📝 Add exam, 🧮 Bunk planner.
+- **Export to calendar (.ics)** – classes (odd/even aware, until semester end), exams, holidays, optional calendar reminders.
+- **QR sharing** – choose what to share (classes by day, exams by type, holidays, semester dates, subjects, attendance off by default), funny QR themes (Classic, Neon, Cute, Savage) with captions and a ⚡ badge, multi-part QR for big timetables. Scanning **only adds**: existing items never change, duplicates are skipped, clashes are shown with "add anyway".
+- **Bunk planner** – attendance % calculator, "can I skip N?", day planner (is skipping a date safe?), safe-days finder, target 65–85 %.
+- **Download website** on GitHub Pages and a permanent `releases/latest/download/ClassVibe.apk` link.
+- **Editable exam reminder schedules** per exam type.
+- 👍/👎 buttons right on class & exam notifications.
+- **Phone cloud backup** toggle (Android backup to your Google account).
+- Searchable **subject picker** with colour dots; exams show "(not in timetable)" for other subjects.
+
+### Changed
+- **4 tabs** instead of 6: Today, Timetable, Exams, Stats. Settings moved to the ⚙️ icon, Import to "＋ Import" on the Timetable tab.
+- **Sharper OCR**: shadow & glare removal for photos, vertically merged cells (2-hour labs in time × day grids), auto-crop to the detected table, camera tips before taking a photo (no camera permission needed).
+
 ## [1.1.0] – Launchpad 🚀
 
 ### Added

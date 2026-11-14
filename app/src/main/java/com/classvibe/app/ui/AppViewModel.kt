@@ -45,6 +45,27 @@ import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.LocalDateTime
 
+/** What to put in a share QR. Empty [days] = all days. examFilter = ALL, UPCOMING or an ExamType name. */
+data class ShareSelection(
+    val classes: Boolean = true,
+    val days: Set<Int> = emptySet(),
+    val exams: Boolean = true,
+    val examFilter: String = "UPCOMING",
+    val holidays: Boolean = true,
+    val semester: Boolean = true,
+    val subjects: Boolean = true,
+    val attendance: Boolean = false
+)
+
+/** State of the QR scanner + merge preview. */
+data class ScanUi(
+    val message: String? = null,
+    val progress: Pair<Int, Int>? = null,
+    val payload: com.classvibe.app.data.SharePayload? = null,
+    val plan: com.classvibe.app.data.MergePlan? = null,
+    val busy: Boolean = false
+)
+
 /** Shared state + actions for Today, Timetable, Exams, Stats and Settings. */
 class AppViewModel(app: Application) : AndroidViewModel(app) {
     /** Fire-and-forget coroutine that returns Unit (so actions can be passed as function references). */
@@ -309,6 +330,106 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun wipeEverything() = io { repo.wipeAll(); toast("All data deleted") }
+
+    // =============================================================== QR sharing
+
+    fun sharePayload(sel: ShareSelection): com.classvibe.app.data.SharePayload {
+        val p = prefs.value ?: AppPrefs()
+        val today = LocalDate.now()
+        val examList = if (!sel.exams) emptyList() else exams.value.filter { e ->
+            when (sel.examFilter) {
+                "ALL" -> true
+                "UPCOMING" -> !e.date.isBefore(today)
+                else -> e.type == sel.examFilter && !e.date.isBefore(today)
+            }
+        }
+        val classList = if (!sel.classes) emptyList() else classes.value.filter { sel.days.isEmpty() || it.dayOfWeek in sel.days }
+        val att = if (!sel.attendance) emptyList() else {
+            val byId = classes.value.associateBy { it.id }
+            attendance.value.mapNotNull { a ->
+                val c = byId[a.classId] ?: return@mapNotNull null
+                com.classvibe.app.data.SharedAttendance(c.dayOfWeek, c.startMinutes, c.course, a.epochDay, a.status)
+            }
+        }
+        return com.classvibe.app.data.SharePayload(
+            classes = classList,
+            exams = examList,
+            holidays = if (sel.holidays) holidays.value else emptyList(),
+            semesterStart = if (sel.semester) p.semesterStartEpochDay else null,
+            semesterEnd = if (sel.semester) p.semesterEndEpochDay else null,
+            subjects = if (sel.subjects) p.customSubjects.toList() else emptyList(),
+            attendance = att
+        )
+    }
+
+    private val assembler = com.classvibe.app.data.ShareCodec.Assembler()
+    private val _scan = MutableStateFlow(ScanUi())
+    val scan: StateFlow<ScanUi> = _scan.asStateFlow()
+
+    fun onScanned(raw: String) {
+        when (val r = assembler.add(raw)) {
+            is com.classvibe.app.data.ShareCodec.Scan.Complete -> {
+                val p = prefs.value ?: AppPrefs()
+                val plan = com.classvibe.app.data.ShareMerge.plan(classes.value, exams.value, holidays.value, p.customSubjects, p, r.payload)
+                _scan.value = ScanUi(message = "✅ Scanned: ${r.payload.summary()}", payload = r.payload, plan = plan)
+            }
+            is com.classvibe.app.data.ShareCodec.Scan.Partial ->
+                _scan.value = ScanUi(message = "📦 Part ${r.have} of ${r.total} scanned – scan the next one", progress = r.have to r.total)
+            is com.classvibe.app.data.ShareCodec.Scan.Invalid -> _scan.value = _scan.value.copy(message = "⚠️ ${r.reason}", busy = false)
+        }
+    }
+
+    fun scanWithCamera(activityContext: Context) = io {
+        _scan.value = _scan.value.copy(busy = true, message = null)
+        try {
+            val raw = com.classvibe.app.qr.QrScanner.scanWithCamera(activityContext)
+            if (raw != null) onScanned(raw) else _scan.value = _scan.value.copy(busy = false)
+        } catch (e: Exception) {
+            _scan.value = _scan.value.copy(busy = false, message = "⚠️ Camera scanner unavailable (needs Google Play services). Use \"Scan from image\" instead.")
+        }
+    }
+
+    fun scanImage(uri: android.net.Uri) = io {
+        _scan.value = _scan.value.copy(busy = true, message = null)
+        try {
+            val values = withContext(Dispatchers.IO) { com.classvibe.app.qr.QrScanner.scanImage(context, uri) }
+            if (values.isEmpty()) _scan.value = _scan.value.copy(busy = false, message = "⚠️ No QR code found in that image.")
+            values.forEach { onScanned(it) }
+        } catch (e: Exception) {
+            _scan.value = _scan.value.copy(busy = false, message = "⚠️ Couldn't read the image: ${e.message}")
+        }
+    }
+
+    fun resetScan() { assembler.reset(); _scan.value = ScanUi() }
+
+    fun applyScan(clashesToAdd: Set<Int>, includeAttendance: Boolean) = io {
+        val plan = _scan.value.plan ?: return@io
+        val extra = plan.clashes.filterIndexed { i, _ -> i in clashesToAdd }.map { it.first }
+        repo.applyMerge(plan, extra, includeAttendance, LocalDate.now())
+        resetScan()
+        toast("✅ Added to your ClassVibe: ${plan.summary().removePrefix("Adds ")}")
+    }
+
+    // =============================================================== calendar export
+
+    fun buildIcs(options: com.classvibe.app.data.CalendarExport.Options): String =
+        com.classvibe.app.data.CalendarExport.build(classes.value, exams.value, holidays.value, prefs.value ?: AppPrefs(), options)
+
+    // =============================================================== cloud backup + exam schedules
+
+    private val _cloudBackup = MutableStateFlow(com.classvibe.app.backup.ClassVibeBackupAgent.isEnabled(app))
+    val cloudBackup: StateFlow<Boolean> = _cloudBackup.asStateFlow()
+
+    fun setCloudBackup(v: Boolean) {
+        com.classvibe.app.backup.ClassVibeBackupAgent.setEnabled(context, v)
+        _cloudBackup.value = v
+    }
+
+    fun setExamSchedule(typeName: String, schedule: com.classvibe.app.data.ExamSchedule?) = io {
+        AppSettings.setExamSchedule(context, typeName, schedule)
+        resync()
+        toast(if (schedule == null) "Reset to the default schedule" else "Exam schedule updated 📝")
+    }
 
     // =============================================================== updates
 

@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -26,7 +27,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
@@ -38,7 +39,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
@@ -48,10 +49,12 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableIntState
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -80,33 +83,43 @@ import com.classvibe.app.ui.components.WhatsNewDialog
 import com.classvibe.app.ui.screens.ExamsScreen
 import com.classvibe.app.ui.screens.HomeScreen
 import com.classvibe.app.ui.screens.ImportScreen
+import com.classvibe.app.ui.screens.QrShareScreen
 import com.classvibe.app.ui.screens.OnboardingScreen
 import com.classvibe.app.ui.screens.SettingsScreen
 import com.classvibe.app.ui.screens.StatsScreen
 import com.classvibe.app.ui.screens.TimetableScreen
 import com.classvibe.app.ui.theme.ClassVibeTheme
 import com.classvibe.app.ui.theme.Cv
+import com.classvibe.app.util.AppShortcuts
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 class MainActivity : ComponentActivity() {
 
     private val requestedTab = mutableIntStateOf(-1)
+    private val requestedAction = mutableStateOf<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        requestedTab.intValue = intent?.getIntExtra(EXTRA_TAB, -1) ?: -1
-        setContent { AppRoot(requestedTab) }
+        if (savedInstanceState == null) readIntent(intent)
+        setContent { AppRoot(requestedTab, requestedAction) }
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        readIntent(intent)
+    }
+
+    private fun readIntent(intent: Intent?) {
+        intent ?: return
         requestedTab.intValue = intent.getIntExtra(EXTRA_TAB, -1)
+        requestedAction.value = intent.getStringExtra(EXTRA_ACTION)
     }
 
     companion object {
         const val EXTRA_TAB = "open_tab"
+        const val EXTRA_ACTION = "shortcut_action"
     }
 }
 
@@ -114,13 +127,14 @@ private enum class AppTab(val title: String, val icon: ImageVector) {
     TODAY("Today", Icons.Default.Home),
     TIMETABLE("Timetable", Icons.Default.DateRange),
     EXAMS("Exams", Icons.Default.Edit),
-    STATS("Stats", Icons.Default.Star),
-    IMPORT("Import", Icons.Default.Add),
-    SETTINGS("Settings", Icons.Default.Settings)
+    STATS("Stats", Icons.Default.Star)
 }
 
+/** Full-screen pages opened on top of the tabs (back arrow / back gesture closes them). */
+private enum class Overlay(val title: String) { SETTINGS("Settings"), IMPORT("Import timetable"), QR("QR sharing") }
+
 @Composable
-private fun AppRoot(requestedTab: MutableIntState) {
+private fun AppRoot(requestedTab: MutableIntState, requestedAction: MutableState<String?>) {
     val vm: AppViewModel = viewModel()
     val prefs by vm.prefs.collectAsStateWithLifecycle()
     val p = prefs
@@ -133,14 +147,14 @@ private fun AppRoot(requestedTab: MutableIntState) {
         if (p.themeMode == ThemeMode.UNSET) {
             OnboardingScreen(onDone = { vm.setTheme(it) })
         } else {
-            MainScaffold(vm, p, requestedTab)
+            MainScaffold(vm, p, requestedTab, requestedAction)
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-private fun MainScaffold(vm: AppViewModel, prefs: AppPrefs, requestedTab: MutableIntState) {
+private fun MainScaffold(vm: AppViewModel, prefs: AppPrefs, requestedTab: MutableIntState, requestedAction: MutableState<String?>) {
     val importVm: ImportViewModel = viewModel()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -156,6 +170,14 @@ private fun MainScaffold(vm: AppViewModel, prefs: AppPrefs, requestedTab: Mutabl
     val update by vm.availableUpdate.collectAsStateWithLifecycle()
     val updateStatus by vm.updateStatus.collectAsStateWithLifecycle()
     val importState by importVm.state.collectAsStateWithLifecycle()
+    val scanState by vm.scan.collectAsStateWithLifecycle()
+    val cloudBackup by vm.cloudBackup.collectAsStateWithLifecycle()
+    var overlay by rememberSaveable { mutableStateOf<Overlay?>(null) }
+    var showNextClass by remember { mutableStateOf(false) }
+    var openBunk by remember { mutableStateOf(false) }
+    BackHandler(enabled = overlay != null) {
+        if (overlay == Overlay.IMPORT && importState.stage != ImportStage.PICK) importVm.discard() else overlay = null
+    }
 
     val tabs = AppTab.entries
     val pagerState = rememberPagerState(pageCount = { tabs.size })
@@ -167,8 +189,18 @@ private fun MainScaffold(vm: AppViewModel, prefs: AppPrefs, requestedTab: Mutabl
     // Notification taps can ask for a specific tab.
     LaunchedEffect(requestedTab.intValue) {
         val t = requestedTab.intValue
-        if (t in tabs.indices) pagerState.scrollToPage(t)
+        if (t in tabs.indices) { overlay = null; pagerState.scrollToPage(t) }
         requestedTab.intValue = -1
+    }
+    // App-icon shortcuts.
+    LaunchedEffect(requestedAction.value) {
+        when (requestedAction.value) {
+            AppShortcuts.ACTION_NEXT_CLASS -> { overlay = null; pagerState.scrollToPage(AppTab.TODAY.ordinal); showNextClass = true }
+            AppShortcuts.ACTION_TODAY -> { overlay = null; pagerState.scrollToPage(AppTab.TODAY.ordinal) }
+            AppShortcuts.ACTION_ADD_EXAM -> { overlay = null; prefillExamCourse = ""; pagerState.scrollToPage(AppTab.EXAMS.ordinal) }
+            AppShortcuts.ACTION_BUNK -> { overlay = null; openBunk = true; pagerState.scrollToPage(AppTab.STATS.ordinal) }
+        }
+        requestedAction.value = null
     }
 
     // --- Permissions (re-checked on every resume) ---
@@ -219,94 +251,88 @@ private fun MainScaffold(vm: AppViewModel, prefs: AppPrefs, requestedTab: Mutabl
         topBar = {
             Column {
                 TopAppBar(
+                    navigationIcon = {
+                        if (overlay != null) {
+                            IconButton(onClick = {
+                                if (overlay == Overlay.IMPORT && importState.stage != ImportStage.PICK) importVm.discard() else overlay = null
+                            }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                        }
+                    },
                     title = {
-                        Text(
-                            buildAnnotatedString {
-                                withStyle(SpanStyle(color = brand, fontWeight = FontWeight.Black)) { append("ClassVibe") }
-                                withStyle(SpanStyle(color = Cv.colors.accent)) { append(" ⚡") }
-                            },
-                            style = MaterialTheme.typography.headlineSmall
-                        )
+                        val o = overlay
+                        if (o != null) {
+                            Text(o.title, style = MaterialTheme.typography.titleLarge)
+                        } else {
+                            Text(
+                                buildAnnotatedString {
+                                    withStyle(SpanStyle(color = brand, fontWeight = FontWeight.Black)) { append("ClassVibe") }
+                                    withStyle(SpanStyle(color = Cv.colors.accent)) { append(" ⚡") }
+                                },
+                                style = MaterialTheme.typography.headlineSmall
+                            )
+                        }
                     },
                     actions = {
-                        IconButton(onClick = { vm.sendTestNotification() }) {
-                            Icon(Icons.Default.Notifications, contentDescription = "Send a test reminder")
+                        if (overlay == null) {
+                            IconButton(onClick = { vm.sendTestNotification() }) {
+                                Icon(Icons.Default.Notifications, contentDescription = "Send a test reminder")
+                            }
+                            IconButton(onClick = { overlay = Overlay.SETTINGS }) {
+                                Icon(Icons.Default.Settings, contentDescription = "Settings")
+                            }
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
                 )
-                ScrollableTabRow(
-                    selectedTabIndex = pagerState.currentPage,
-                    edgePadding = 8.dp,
-                    containerColor = MaterialTheme.colorScheme.background,
-                    contentColor = brand,
-                    indicator = { positions ->
-                        if (positions.isNotEmpty()) {
-                            // Underline follows the finger while swiping between pages.
-                            val current = pagerState.currentPage.coerceIn(0, positions.lastIndex)
-                            val fraction = pagerState.currentPageOffsetFraction
-                            val target = (current + if (fraction > 0f) 1 else -1).coerceIn(0, positions.lastIndex)
-                            val f = abs(fraction)
-                            val left = lerp(positions[current].left, positions[target].left, f)
-                            val width = lerp(positions[current].width, positions[target].width, f)
-                            Box(
-                                Modifier.fillMaxWidth().wrapContentSize(Alignment.BottomStart)
-                                    .offset(x = left).width(width).height(3.dp)
-                                    .background(brand, RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp))
+                if (overlay == null) {
+                    TabRow(
+                        selectedTabIndex = pagerState.currentPage,
+                        containerColor = MaterialTheme.colorScheme.background,
+                        contentColor = brand,
+                        indicator = { positions ->
+                            if (positions.isNotEmpty()) {
+                                // Underline follows the finger while swiping between pages.
+                                val current = pagerState.currentPage.coerceIn(0, positions.lastIndex)
+                                val fraction = pagerState.currentPageOffsetFraction
+                                val target = (current + if (fraction > 0f) 1 else -1).coerceIn(0, positions.lastIndex)
+                                val f = abs(fraction)
+                                val left = lerp(positions[current].left, positions[target].left, f)
+                                val width = lerp(positions[current].width, positions[target].width, f)
+                                Box(
+                                    Modifier.fillMaxWidth().wrapContentSize(Alignment.BottomStart)
+                                        .offset(x = left).width(width).height(3.dp)
+                                        .background(brand, RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp))
+                                )
+                            }
+                        }
+                    ) {
+                        tabs.forEachIndexed { i, t ->
+                            Tab(
+                                selected = pagerState.currentPage == i,
+                                onClick = { scope.launch { pagerState.animateScrollToPage(i) } },
+                                text = { Text(t.title, maxLines = 1) },
+                                icon = { Icon(t.icon, contentDescription = null) },
+                                selectedContentColor = brand,
+                                unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                    }
-                ) {
-                    tabs.forEachIndexed { i, t ->
-                        Tab(
-                            selected = pagerState.currentPage == i,
-                            onClick = { scope.launch { pagerState.animateScrollToPage(i) } },
-                            text = { Text(t.title) },
-                            icon = { Icon(t.icon, contentDescription = null) },
-                            selectedContentColor = brand,
-                            unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
                     }
                 }
             }
         }
     ) { padding ->
-        HorizontalPager(
-            state = pagerState,
-            userScrollEnabled = importState.stage != ImportStage.CROP,
-            modifier = Modifier.fillMaxSize().padding(padding)
-        ) { page ->
-            when (tabs[page]) {
-                AppTab.TODAY -> HomeScreen(
-                    classes = classes, exams = exams, attendance = attendance, holidays = holidays, prefs = prefs, now = now,
-                    update = update,
+        Box(Modifier.fillMaxSize().padding(padding)) {
+            when (overlay) {
+                Overlay.SETTINGS -> SettingsScreen(
+                    vm = vm, prefs = prefs, holidays = holidays, customMessages = customMessages,
+                    recentMessages = recentMessages, updateStatus = updateStatus,
                     notificationsEnabled = notificationsOk, exactAlarmsAllowed = exactOk,
                     onEnableNotifications = openNotificationSettings, onAllowExactAlarms = openExactAlarmSettings,
-                    onGoToImport = { goTo(AppTab.IMPORT) }, onGoToExams = { goTo(AppTab.EXAMS) },
-                    onMark = { c, s -> vm.mark(c, now.toLocalDate(), s) },
-                    onAddExamFor = { c -> prefillExamCourse = c.course; goTo(AppTab.EXAMS) },
-                    onRemoveHoliday = { vm.deleteHoliday(it) },
-                    onUpdate = { vm.downloadUpdate(it) },
-                    onSkipUpdate = { vm.skipUpdate(it) }
+                    cloudBackup = cloudBackup,
+                    onOpenQr = { overlay = Overlay.QR }
                 )
-                AppTab.TIMETABLE -> TimetableScreen(
-                    allClasses = classes, prefs = prefs, now = now,
-                    isVisible = pagerState.settledPage == AppTab.TIMETABLE.ordinal,
-                    onSaveEdit = { vm.saveEdit(it) },
-                    onDelete = { vm.deleteClass(it) },
-                    onAddExamFor = { c -> prefillExamCourse = c.course; goTo(AppTab.EXAMS) },
-                    onGoToImport = { goTo(AppTab.IMPORT) }
-                )
-                AppTab.EXAMS -> ExamsScreen(
-                    exams = exams, classes = classes, prefs = prefs, today = now.toLocalDate(),
-                    prefillCourse = prefillExamCourse,
-                    onPrefillConsumed = { prefillExamCourse = null },
-                    onSave = { e, quiet -> vm.saveExam(e, quiet) },
-                    onDelete = { vm.deleteExam(it) },
-                    onImportCsv = { vm.importExamsCsv(it) }
-                )
-                AppTab.STATS -> StatsScreen(classes = classes, attendance = attendance, today = now.toLocalDate())
-                AppTab.IMPORT -> ImportScreen(
+                Overlay.QR -> QrShareScreen(vm, scanState, classes)
+                Overlay.IMPORT -> ImportScreen(
                     state = importState,
                     knownCourses = classes.map { it.course }.distinct(),
                     knownRooms = classes.map { it.room }.distinct(),
@@ -325,17 +351,49 @@ private fun MainScaffold(vm: AppViewModel, prefs: AppPrefs, requestedTab: Mutabl
                     onReplaceChange = { importVm.setReplaceExisting(it) },
                     onToggleGrid = { importVm.toggleGrid() },
                     onDiscard = { importVm.discard() },
-                    onSave = { importVm.save { goTo(AppTab.TODAY) } }
+                    onSave = { importVm.save { overlay = null; goTo(AppTab.TODAY) } }
                 )
-                AppTab.SETTINGS -> SettingsScreen(
-                    vm = vm, prefs = prefs, holidays = holidays, customMessages = customMessages,
-                    recentMessages = recentMessages, updateStatus = updateStatus,
-                    notificationsEnabled = notificationsOk, exactAlarmsAllowed = exactOk,
-                    onEnableNotifications = openNotificationSettings, onAllowExactAlarms = openExactAlarmSettings
-                )
+                null -> HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
+                    when (tabs[page]) {
+                        AppTab.TODAY -> HomeScreen(
+                            classes = classes, exams = exams, attendance = attendance, holidays = holidays, prefs = prefs, now = now,
+                            update = update,
+                            notificationsEnabled = notificationsOk, exactAlarmsAllowed = exactOk,
+                            onEnableNotifications = openNotificationSettings, onAllowExactAlarms = openExactAlarmSettings,
+                            onGoToImport = { overlay = Overlay.IMPORT }, onGoToExams = { goTo(AppTab.EXAMS) },
+                            onMark = { c, s -> vm.mark(c, now.toLocalDate(), s) },
+                            onAddExamFor = { c -> prefillExamCourse = c.course; goTo(AppTab.EXAMS) },
+                            onRemoveHoliday = { vm.deleteHoliday(it) },
+                            onUpdate = { vm.downloadUpdate(it) },
+                            onSkipUpdate = { vm.skipUpdate(it) }
+                        )
+                        AppTab.TIMETABLE -> TimetableScreen(
+                            allClasses = classes, prefs = prefs, now = now,
+                            isVisible = pagerState.settledPage == AppTab.TIMETABLE.ordinal,
+                            onSaveEdit = { vm.saveEdit(it) },
+                            onDelete = { vm.deleteClass(it) },
+                            onAddExamFor = { c -> prefillExamCourse = c.course; goTo(AppTab.EXAMS) },
+                            onGoToImport = { overlay = Overlay.IMPORT }
+                        )
+                        AppTab.EXAMS -> ExamsScreen(
+                            exams = exams, classes = classes, prefs = prefs, today = now.toLocalDate(),
+                            prefillCourse = prefillExamCourse,
+                            onPrefillConsumed = { prefillExamCourse = null },
+                            onSave = { e, quiet -> vm.saveExam(e, quiet) },
+                            onDelete = { vm.deleteExam(it) },
+                            onImportCsv = { vm.importExamsCsv(it) }
+                        )
+                        AppTab.STATS -> StatsScreen(
+                            classes = classes, attendance = attendance, holidays = holidays, prefs = prefs,
+                            today = now.toLocalDate(), openBunkPlanner = openBunk
+                        )
+                    }
+                }
             }
         }
     }
+
+    if (showNextClass) NextClassDialog(classes, attendance, holidays, prefs, now) { showNextClass = false }
 
     if (showWhatsNew) {
         WhatsNewDialog(BuildConfig.VERSION_NAME, ReleaseNotes.CURRENT) {
@@ -343,4 +401,51 @@ private fun MainScaffold(vm: AppViewModel, prefs: AppPrefs, requestedTab: Mutabl
             vm.markWhatsNewSeen()
         }
     }
+}
+
+/** "🔔 Next class" app shortcut. */
+@Composable
+private fun NextClassDialog(
+    classes: List<com.classvibe.app.data.ClassSchedule>,
+    attendance: List<com.classvibe.app.data.AttendanceRecord>,
+    holidays: List<com.classvibe.app.data.Holiday>,
+    prefs: AppPrefs,
+    now: java.time.LocalDateTime,
+    onDismiss: () -> Unit
+) {
+    val marks = attendance.associateBy { "${it.classId}|${it.epochDay}" }
+    val next = (0L..7L).asSequence().flatMap { offset ->
+        val date = now.toLocalDate().plusDays(offset)
+        classes.filter { c ->
+            com.classvibe.app.data.ClassCalendar.isActive(c, date, prefs, holidays, marks["${c.id}|${date.toEpochDay()}"]) &&
+                (offset > 0 || c.endMinutes > now.hour * 60 + now.minute)
+        }.sortedBy { it.startMinutes }.map { date to it }.asSequence()
+    }.firstOrNull()
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("🔔 Next class") },
+        text = {
+            if (next == null) Text("No upcoming classes this week 🎉")
+            else {
+                val (date, c) = next
+                val minutes = now.hour * 60 + now.minute
+                val whenText = when {
+                    date == now.toLocalDate() && minutes in c.startMinutes until c.endMinutes -> "Happening now – ${c.endMinutes - minutes} min left"
+                    date == now.toLocalDate() -> "Today at ${c.startTimeText} (in ${(c.startMinutes - minutes) / 60}h ${(c.startMinutes - minutes) % 60}m)"
+                    date == now.toLocalDate().plusDays(1) -> "Tomorrow at ${c.startTimeText}"
+                    else -> "${c.dayName} at ${c.startTimeText}"
+                }
+                Column {
+                    Text(c.course, style = MaterialTheme.typography.titleLarge)
+                    Text(whenText, style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        listOf(c.classType, c.room.ifBlank { null }?.let { "📍 $it" }, c.instructor.ifBlank { null }?.let { "👤 $it" })
+                            .filterNotNull().joinToString(" • "),
+                        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        },
+        confirmButton = { androidx.compose.material3.TextButton(onClick = onDismiss) { Text("OK") } }
+    )
 }

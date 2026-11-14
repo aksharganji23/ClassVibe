@@ -56,6 +56,25 @@ fun CropScreen(
     var crop by remember(bitmap) { mutableStateOf(Rect(0f, 0f, 1f, 1f)) }
     var boxSize by remember { mutableStateOf(IntSize.Zero) }
     var handle by remember { mutableIntStateOf(-1) }
+    var autoCropped by remember(bitmap) { mutableStateOf(false) }
+
+    // ✨ Auto-crop: find the table's outer border and pre-set the crop box.
+    androidx.compose.runtime.LaunchedEffect(bitmap) {
+        val bounds = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+            try {
+                val scale = min(1f, 1200f / maxOf(bitmap.width, bitmap.height))
+                val small = if (scale < 1f) android.graphics.Bitmap.createScaledBitmap(bitmap, (bitmap.width * scale).roundToInt(), (bitmap.height * scale).roundToInt(), true) else bitmap
+                com.classvibe.app.parser.TableDetector(com.classvibe.app.parser.ImageEnhancer.enhance(small)).tableBounds()?.let { r ->
+                    Rect(r.left / (small.width.toFloat()), r.top / (small.height.toFloat()), r.right / (small.width.toFloat()), r.bottom / (small.height.toFloat()))
+                }
+            } catch (e: Exception) { null }
+        }
+        if (bounds != null && bounds.width > 0.2f && bounds.height > 0.2f && (bounds.width < 0.97f || bounds.height < 0.97f)) {
+            val pad = 0.015f
+            crop = Rect((bounds.left - pad).coerceAtLeast(0f), (bounds.top - pad).coerceAtLeast(0f), (bounds.right + pad).coerceAtMost(1f), (bounds.bottom + pad).coerceAtMost(1f))
+            autoCropped = true
+        }
+    }
     val accent = Cv.colors.accent
 
     val scale = if (boxSize.width == 0) 1f else min(boxSize.width.toFloat() / bitmap.width, boxSize.height.toFloat() / bitmap.height)
@@ -70,6 +89,7 @@ fun CropScreen(
             "Drag the corners so only the timetable is inside the box. Rotate if it's sideways.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        if (autoCropped) Text("✨ Table detected – auto-cropped. Adjust if needed.", style = MaterialTheme.typography.labelLarge, color = Cv.colors.success)
         Spacer(Modifier.height(10.dp))
         Box(
             Modifier.fillMaxWidth().weight(1f).onSizeChanged { boxSize = it }

@@ -4,6 +4,9 @@ Offline class timetable for Android with reminders that make you laugh, an exam 
 
 **Kotlin · Jetpack Compose (Material 3) · Room · DataStore · WorkManager · AlarmManager · ML Kit (on-device OCR)**
 
+[![Download APK](https://img.shields.io/badge/⬇️_Download-ClassVibe.apk-0055A4?style=for-the-badge)](https://github.com/aksharganji23/ClassVibe/releases/latest/download/ClassVibe.apk)
+[![Website](https://img.shields.io/badge/🌐_Website-aksharganji23.github.io%2FClassVibe-FF8C1A?style=for-the-badge)](https://aksharganji23.github.io/ClassVibe/)
+
 👉 **Start here: [GUIDE.md](GUIDE.md)**. It covers pushing to GitHub, building, signing, releasing and auto-updates.
 
 ## Highlights
@@ -12,7 +15,8 @@ Offline class timetable for Android with reminders that make you laugh, an exam 
 - **Attendance:** tracking with 75% warnings, a stats tab, holiday mode and "cancelled today".
 - **Accurate screenshot import:** crop, deskew, grid detection, merged cells, two-pass OCR, auto-correction and a 🟢🟡🔴 review.
 - **Screens and widgets:** light/dark themes (#0055A4), swipe tabs, a weekly grid and a home-screen widget.
-- **Data:** backup/restore, CSV and QR sharing, odd/even weeks and semester dates.
+- **Sharing & planning:** funny QR sharing (pick what to share; scanning only adds), calendar export (.ics), bunk planner with attendance % calculator, app shortcuts.
+- **Data:** backup/restore, CSV export, phone cloud backup toggle, odd/even weeks and semester dates.
 - **Updates and privacy:** verified in-app updates from GitHub Releases. No accounts, ads or trackers, and data never leaves the phone.
 
 ## Project layout

@@ -105,7 +105,8 @@ object UpdateChecker {
                 for (a in 0 until assets.length()) {
                     val asset = assets.getJSONObject(a)
                     val name = asset.getString("name")
-                    if (name.endsWith(".apk")) apk = asset
+                    // Prefer the versioned file (ClassVibe-v1.2.0.apk) over the stable copy (ClassVibe.apk).
+                    if (name.endsWith(".apk") && (apk == null || name != "ClassVibe.apk")) apk = asset
                     if (name.endsWith(".sha256")) sha = asset
                 }
                 apk ?: continue

@@ -71,7 +71,8 @@ class ClassReminderWorker(context: Context, params: WorkerParameters) : Coroutin
                 )
                 NotificationHelper.post(
                     applicationContext, NotificationHelper.classId(c.id), NotificationHelper.CH_CLASSES,
-                    built.title, built.body, built.bigText, subText = "${c.classType} • ${c.startTimeText}"
+                    built.title, built.body, built.bigText, subText = "${c.classType} • ${c.startTimeText}",
+                    actions = RateActionReceiver.actions(applicationContext, built.messageId)
                 )
             }
         }
@@ -109,6 +110,7 @@ class ClassReminderWorker(context: Context, params: WorkerParameters) : Coroutin
                 NotificationHelper.post(
                     applicationContext, NotificationHelper.examId(exam.id), NotificationHelper.CH_EXAMS,
                     built.title, built.body, built.bigText, subText = exam.typeLabel,
+                    actions = RateActionReceiver.actions(applicationContext, built.messageId),
                     contentIntent = NotificationHelper.openAppIntent(applicationContext, tab = 2)
                 )
             }

@@ -2,6 +2,7 @@ package com.classvibe.app.notifications
 
 import com.classvibe.app.data.AppPrefs
 import com.classvibe.app.data.Exam
+import com.classvibe.app.data.ExamSchedule
 import com.classvibe.app.data.ExamType
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -36,6 +37,26 @@ object ExamPlanner {
     private val MID_MILESTONES = listOf(30, 20, 15, 10, 7, 5, 3, 2, 1)
     private val SHORT_MILESTONES = listOf(7, 3, 1)
 
+    /** Built-in schedule per exam type (users can override milestones / daily / weekly in Settings). */
+    fun defaultSchedule(type: ExamType): ExamSchedule = when (type) {
+        ExamType.SEMESTER -> ExamSchedule(SEM_MILESTONES, 7, true)
+        ExamType.MID -> ExamSchedule(MID_MILESTONES, 3, true)
+        ExamType.LAB, ExamType.OTHER -> ExamSchedule(SHORT_MILESTONES, 0, false)
+        ExamType.ASSIGNMENT -> ExamSchedule(listOf(3, 1), 0, false)
+        ExamType.SLIP_TEST, ExamType.QUIZ, ExamType.VIVA -> ExamSchedule(emptyList(), 0, false)
+    }
+
+    fun scheduleFor(type: ExamType, prefs: AppPrefs): ExamSchedule = prefs.examSchedules[type.name] ?: defaultSchedule(type)
+
+    /** Fixed extras that always apply, shown next to the editable part in Settings. */
+    fun fixedExtras(type: ExamType): String = when (type) {
+        ExamType.SEMESTER, ExamType.MID -> "+ exam morning"
+        ExamType.LAB, ExamType.OTHER -> "+ evening before + exam morning"
+        ExamType.SLIP_TEST -> "+ morning and evening of the day before"
+        ExamType.QUIZ, ExamType.VIVA -> "+ evening before + morning of"
+        ExamType.ASSIGNMENT -> "+ 3 hours before the deadline"
+    }
+
     fun reminders(exam: Exam, prefs: AppPrefs): List<ExamReminder> {
         val examDate = exam.date
         val examAt = examDate.atTime(LocalTime.of(exam.timeMinutes / 60, exam.timeMinutes % 60))
@@ -45,52 +66,32 @@ object ExamPlanner {
             if (it < 6 * 60) maxOf(5 * 60, exam.timeMinutes - 30) else it
         }.coerceAtLeast(0)
         val morningOf = examDate.atTime(LocalTime.of(morningOfMinutes / 60, morningOfMinutes % 60))
+        val schedule = scheduleFor(exam.examType, prefs)
 
         val list = mutableListOf<ExamReminder>()
         fun daysBefore(d: Int, kind: ExamReminderKind) {
             list += ExamReminder(examDate.minusDays(d.toLong()).atTime(countdown), kind, d.toLong())
         }
-        fun weekly() {
+        // Editable part
+        if (schedule.weekly) {
             var day = LocalDate.ofEpochDay(exam.createdEpochDay).plusWeeks(1)
             while (day.isBefore(examDate)) {
                 list += ExamReminder(day.atTime(countdown), ExamReminderKind.WEEKLY, ChronoUnit.DAYS.between(day, examDate))
                 day = day.plusWeeks(1)
             }
         }
+        schedule.milestones.forEach { daysBefore(it, ExamReminderKind.MILESTONE) }
+        (1..schedule.dailyFinal).forEach { daysBefore(it, ExamReminderKind.DAILY) }
+
+        // Fixed part
         val eveningBefore = ExamReminder(examDate.minusDays(1).atTime(evening), ExamReminderKind.EVENING_BEFORE, 1)
         val examMorning = ExamReminder(morningOf, ExamReminderKind.EXAM_MORNING, 0)
-
         when (exam.examType) {
-            ExamType.SEMESTER -> {
-                weekly()
-                SEM_MILESTONES.forEach { daysBefore(it, ExamReminderKind.MILESTONE) }
-                (1..7).forEach { daysBefore(it, ExamReminderKind.DAILY) }
-                list += examMorning
-            }
-            ExamType.MID -> {
-                weekly()
-                MID_MILESTONES.forEach { daysBefore(it, ExamReminderKind.MILESTONE) }
-                (1..3).forEach { daysBefore(it, ExamReminderKind.DAILY) }
-                list += examMorning
-            }
-            ExamType.LAB, ExamType.OTHER -> {
-                SHORT_MILESTONES.forEach { daysBefore(it, ExamReminderKind.MILESTONE) }
-                list += eveningBefore
-                list += examMorning
-            }
-            ExamType.SLIP_TEST -> {
-                daysBefore(1, ExamReminderKind.DAY_BEFORE_MORNING)
-                list += eveningBefore
-            }
-            ExamType.QUIZ, ExamType.VIVA -> {
-                list += eveningBefore
-                list += examMorning
-            }
-            ExamType.ASSIGNMENT -> {
-                daysBefore(3, ExamReminderKind.MILESTONE)
-                daysBefore(1, ExamReminderKind.MILESTONE)
-                list += ExamReminder(examAt.minusHours(3), ExamReminderKind.HOURS_BEFORE, 0)
-            }
+            ExamType.SEMESTER, ExamType.MID -> list += examMorning
+            ExamType.LAB, ExamType.OTHER -> { list += eveningBefore; list += examMorning }
+            ExamType.SLIP_TEST -> { daysBefore(1, ExamReminderKind.DAY_BEFORE_MORNING); list += eveningBefore }
+            ExamType.QUIZ, ExamType.VIVA -> { list += eveningBefore; list += examMorning }
+            ExamType.ASSIGNMENT -> list += ExamReminder(examAt.minusHours(3), ExamReminderKind.HOURS_BEFORE, 0)
         }
 
         // One countdown per day: milestone > daily > weekly.

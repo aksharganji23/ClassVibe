@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ClassVibe ⚡ – the timetable app that roasts you on time</title>
+  <meta name="description" content="Offline Android timetable with funny class reminders, exam planner, attendance & bunk planner, QR sharing. No accounts, no ads, no trackers.">
+  <meta name="theme-color" content="#0055A4">
+  <meta property="og:title" content="ClassVibe ⚡">
+  <meta property="og:description" content="Offline timetable with reminders that make you laugh. Free, no ads.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="hero">
+    <nav class="wrap nav">
+      <span class="logo">ClassVibe <span class="bolt">⚡</span></span>
+      <a class="navlink" id="repo-link" href="https://github.com/aksharganji23/ClassVibe">GitHub</a>
+    </nav>
+    <div class="wrap hero-grid">
+      <div>
+        <h1>Your timetable,<br><span class="accent">with attitude.</span></h1>
+        <p class="lead">An offline Android timetable that reminds you before every class with lines like
+          <em>“Lab in 10 min. Your lab partner already gave up.”</em></p>
+        <div class="cta">
+          <a class="btn primary" id="download" href="https://github.com/aksharganji23/ClassVibe/releases/latest/download/ClassVibe.apk">⬇️ Download APK</a>
+          <a class="btn ghost" id="notes" href="https://github.com/aksharganji23/ClassVibe/releases/latest">What's new</a>
+        </div>
+        <p class="meta" id="meta">Free • Android 8.0+ • No accounts, ads or trackers</p>
+      </div>
+      <div class="qr-card">
+        <img src="download-qr.png" alt="QR code that downloads the latest ClassVibe APK" width="220" height="220">
+        <p>On a laptop? Scan with your phone 📱</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="features">
+      <div class="card"><b>🔔 Funny reminders</b><p>600+ lines in 6 styles, including Tenglish &amp; Hinglish. Start, 5, 10… 60 minutes before class.</p></div>
+      <div class="card"><b>📸 Screenshot import</b><p>Snap your college timetable. On-device OCR, shadow removal, merged lab cells, 🟢🟡🔴 review.</p></div>
+      <div class="card"><b>📝 Exam planner</b><p>Semester, mids, labs, slip tests, quizzes, viva. Countdown reminders you can tune per type.</p></div>
+      <div class="card"><b>🧮 Bunk planner</b><p>Attendance % calculator, “can I skip 2?”, safe days. Stay above 75 % – responsibly.</p></div>
+      <div class="card"><b>🔳 Funny QR sharing</b><p>Share classes or exams with friends. Scanning only adds new stuff – never overwrites.</p></div>
+      <div class="card"><b>📆 Calendar export</b><p>Classes, exams and holidays into Google, Samsung or Outlook calendar (.ics).</p></div>
+    </section>
+
+    <section class="install">
+      <h2>Install in 4 steps</h2>
+      <ol>
+        <li>Tap <b>Download APK</b> above (on your phone).</li>
+        <li>Open the downloaded <code>ClassVibe-….apk</code> from notifications or the Downloads app.</li>
+        <li>If asked, allow <b>Install unknown apps</b> for your browser or Files app.</li>
+        <li>If Play Protect warns about an unknown developer, tap <b>More details → Install anyway</b>. ClassVibe updates itself from GitHub after that.</li>
+      </ol>
+    </section>
+
+    <section class="privacy">
+      <h2>🔒 Privacy, in one line</h2>
+      <p>Your timetable stays on your phone. The only internet use is an optional check for updates on GitHub. <a href="privacy.html">Full privacy policy</a>.</p>
+    </section>
+  </main>
+
+  <footer class="wrap footer">
+    <span>Made with ⚡ and too many 8 AM classes.</span>
+    <span id="ver"></span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

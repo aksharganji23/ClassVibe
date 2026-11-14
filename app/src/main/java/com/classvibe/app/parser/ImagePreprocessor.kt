@@ -54,50 +54,8 @@ object ImagePreprocessor {
         return Bitmap.createScaledBitmap(src, w, h, true)
     }
 
-    /**
-     * Grayscale + automatic contrast stretch (2nd–98th percentile) + invert when the
-     * background is dark. Output is ARGB_8888 with equal R=G=B.
-     */
-    fun enhance(src: Bitmap): Bitmap {
-        val w = src.width
-        val h = src.height
-        val px = IntArray(w * h)
-        src.getPixels(px, 0, w, 0, 0, w, h)
-        val lum = IntArray(px.size)
-        val hist = IntArray(256)
-        for (i in px.indices) {
-            val c = px[i]
-            val r = (c shr 16) and 0xFF
-            val g = (c shr 8) and 0xFF
-            val b = c and 0xFF
-            val l = (r * 299 + g * 587 + b * 114) / 1000
-            lum[i] = l
-            hist[l]++
-        }
-        val total = px.size
-        fun percentile(p: Double): Int {
-            val target = (total * p).toLong()
-            var acc = 0L
-            for (v in 0..255) {
-                acc += hist[v]
-                if (acc >= target) return v
-            }
-            return 255
-        }
-        val lo = percentile(0.02)
-        val hi = max(lo + 1, percentile(0.98))
-        val mean = lum.average()
-        val invert = mean < 110 // dark-mode screenshot
-        val range = (hi - lo).toFloat()
-        for (i in px.indices) {
-            var v = ((lum[i] - lo) * 255f / range).roundToInt().coerceIn(0, 255)
-            if (invert) v = 255 - v
-            px[i] = (0xFF shl 24) or (v shl 16) or (v shl 8) or v
-        }
-        val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-        out.setPixels(px, 0, w, 0, 0, w, h)
-        return out
-    }
+    /** Grayscale, dark-mode inversion, shadow removal and contrast stretch (see [ImageEnhancer]). */
+    fun enhance(src: Bitmap): Bitmap = ImageEnhancer.enhance(src)
 
     fun rotate(src: Bitmap, degrees: Float): Bitmap {
         if (degrees == 0f) return src

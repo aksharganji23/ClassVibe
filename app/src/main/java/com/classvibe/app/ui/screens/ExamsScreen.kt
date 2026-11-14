@@ -60,13 +60,13 @@ import com.classvibe.app.ui.components.DropdownTextField
 import com.classvibe.app.ui.components.EmptyState
 import com.classvibe.app.ui.components.Pill
 import com.classvibe.app.ui.components.SelectField
+import com.classvibe.app.ui.components.SubjectPicker
 import com.classvibe.app.ui.components.TimeField
 import com.classvibe.app.ui.theme.Cv
 import com.classvibe.app.ui.theme.courseColor
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
-private const val OTHER_SUBJECT = "➕ Other subject…"
 
 /** What the add/edit exam form needs from the timetable. */
 data class ExamFormData(
@@ -106,13 +106,15 @@ fun ExamsScreen(
     var weekMode by remember { mutableStateOf(false) }
     var showPast by rememberSaveable { mutableStateOf(false) }
 
+    // prefillCourse: a subject (from a class card) or "" (from the "Add exam" app shortcut).
     LaunchedEffect(prefillCourse) {
         if (prefillCourse != null) {
-            addCourse = prefillCourse
+            addCourse = prefillCourse.ifBlank { null }
             adding = true
             onPrefillConsumed()
         }
     }
+    val timetableCourses = remember(classes) { classes.map { it.course.trim().lowercase() }.toSet() }
 
     val csvPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         uri ?: return@rememberLauncherForActivityResult
@@ -160,13 +162,13 @@ fun ExamsScreen(
             EmptyState("🎓", "No exams yet", "Tip: tap ⋮ on any class card → \"Add exam for this subject\" to pre-fill everything.")
         }
 
-        items(upcoming, key = { it.id }) { e -> ExamCard(e, today, Modifier.animateItem()) { editing = e } }
+        items(upcoming, key = { it.id }) { e -> ExamCard(e, today, e.course.trim().lowercase() in timetableCourses, Modifier.animateItem()) { editing = e } }
 
         if (past.isNotEmpty()) {
             item {
                 TextButton(onClick = { showPast = !showPast }) { Text(if (showPast) "Hide past exams" else "Show ${past.size} past exam(s)") }
             }
-            if (showPast) items(past, key = { "p${it.id}" }) { e -> ExamCard(e, today, Modifier.animateItem()) { editing = e } }
+            if (showPast) items(past, key = { "p${it.id}" }) { e -> ExamCard(e, today, e.course.trim().lowercase() in timetableCourses, Modifier.animateItem()) { editing = e } }
         }
         item { Spacer(Modifier.height(32.dp)) }
     }
@@ -192,7 +194,7 @@ fun ExamsScreen(
 }
 
 @Composable
-private fun ExamCard(exam: Exam, today: LocalDate, modifier: Modifier = Modifier, onClick: () -> Unit) {
+private fun ExamCard(exam: Exam, today: LocalDate, inTimetable: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val days = ChronoUnit.DAYS.between(today, exam.date)
     val color = when {
         days < 0 -> MaterialTheme.colorScheme.onSurfaceVariant
@@ -219,6 +221,7 @@ private fun ExamCard(exam: Exam, today: LocalDate, modifier: Modifier = Modifier
                 Pill("${exam.examType.emoji} ${exam.typeLabel}", courseColor(exam.course))
                 Spacer(Modifier.height(4.dp))
                 Text(exam.course, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                if (!inTimetable) Text("(not in timetable)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(
                     exam.date.format(DATE_LABEL) + " · " + TimeUtils.formatFriendly(exam.timeMinutes) +
                         if (exam.room.isNotBlank()) " · ${exam.room}" else "",
@@ -242,7 +245,6 @@ private fun ExamDialog(
     onDelete: (() -> Unit)?
 ) {
     var subject by remember { mutableStateOf(initial?.course ?: prefillCourse ?: "") }
-    var otherSubject by remember { mutableStateOf(false) }
     var type by remember { mutableStateOf(initial?.examType ?: ExamType.MID) }
     var customType by remember { mutableStateOf(initial?.customType ?: "") }
     var date by remember { mutableStateOf(initial?.date) }
@@ -276,24 +278,17 @@ private fun ExamDialog(
         title = { Text(if (initial == null) "Add exam" else "Edit exam") },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                if (otherSubject || (subject.isNotBlank() && form.subjects.none { it.equals(subject, true) } && initial != null)) {
-                    OutlinedTextField(subject, { subject = it }, label = { Text("Subject") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                    if (form.subjects.isNotEmpty()) TextButton(onClick = { otherSubject = false; subject = "" }) { Text("Pick from timetable instead") }
-                } else {
-                    SelectField(
-                        label = "📘 Subject",
-                        value = subject,
-                        options = form.subjects + OTHER_SUBJECT,
-                        onSelect = { picked ->
-                            if (picked == OTHER_SUBJECT) { otherSubject = true; subject = "" }
-                            else {
-                                subject = picked
-                                form.instructorFor[picked]?.let { if (instructor.isBlank()) instructor = it }
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+                SubjectPicker(
+                    label = "📘 Subject",
+                    value = subject,
+                    subjects = form.subjects,
+                    onPick = { picked ->
+                        subject = picked
+                        form.instructorFor[picked]?.let { if (instructor.isBlank()) instructor = it }
+                    },
+                    notInTimetable = subject.isNotBlank() && form.subjects.none { it.equals(subject, true) },
+                    modifier = Modifier.fillMaxWidth()
+                )
                 SelectField(
                     label = "🏷️ Exam type",
                     value = "${type.emoji} ${type.label}",
@@ -328,7 +323,7 @@ private fun ExamDialog(
                     TextButton(enabled = valid, onClick = {
                         onSave(build(), true)
                         // Keep type + date, clear the subject for the next one.
-                        subject = ""; room = ""; instructor = ""; notes = ""; otherSubject = false
+                        subject = ""; room = ""; instructor = ""; notes = ""
                     }) { Text("Save & add another") }
                 }
                 TextButton(enabled = valid, onClick = { onSave(build(), false) }) { Text("Save") }
@@ -377,7 +372,7 @@ private fun ExamWeekDialog(form: ExamFormData, today: LocalDate, onDismiss: () -
                         Text("Exam ${i + 1}", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
                         if (rows.size > 1) IconButton(onClick = { rows.removeAt(i) }) { Icon(Icons.Default.Delete, "Remove row") }
                     }
-                    DropdownTextField("Subject", row.subject, form.subjects, { rows[i] = row.copy(subject = it) }, modifier = Modifier.fillMaxWidth())
+                    SubjectPicker("Subject", row.subject, form.subjects, { picked -> rows[i] = rows[i].copy(subject = picked) }, Modifier.fillMaxWidth())
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         DateField("Date", row.date, onPick = { d -> rows[i] = rows[i].copy(date = d) }, minDate = today, modifier = Modifier.weight(1.3f))
                         TimeField("Time", row.time, form.slots, onChange = { t -> rows[i] = rows[i].copy(time = t) }, modifier = Modifier.weight(1f))

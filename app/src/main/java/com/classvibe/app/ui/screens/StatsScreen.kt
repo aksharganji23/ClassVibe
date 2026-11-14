@@ -37,7 +37,14 @@ import com.classvibe.app.ui.theme.courseColor
 import java.time.LocalDate
 
 @Composable
-fun StatsScreen(classes: List<ClassSchedule>, attendance: List<AttendanceRecord>, today: LocalDate) {
+fun StatsScreen(
+    classes: List<ClassSchedule>,
+    attendance: List<AttendanceRecord>,
+    holidays: List<com.classvibe.app.data.Holiday>,
+    prefs: com.classvibe.app.data.AppPrefs,
+    today: LocalDate,
+    openBunkPlanner: Boolean = false
+) {
     if (classes.isEmpty() && attendance.isEmpty()) {
         EmptyState("📊", "No stats yet", "Import your timetable and mark attendance from the Today screen or from notifications.")
         return
@@ -72,6 +79,8 @@ fun StatsScreen(classes: List<ClassSchedule>, attendance: List<AttendanceRecord>
                 StatTile(busiest?.key?.let { DayParser.short(it) } ?: "—", "Busiest day", Modifier.weight(1f))
             }
         }
+
+        item { BunkPlannerSection(classes, attendance, holidays, prefs, today, startExpanded = openBunkPlanner) }
 
         item { Text("Attendance by subject", style = MaterialTheme.typography.titleMedium) }
         if (byCourse.isEmpty()) {

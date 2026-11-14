@@ -4,6 +4,7 @@ import android.app.Application
 import com.classvibe.app.notifications.NotificationHelper
 import com.classvibe.app.notifications.ReminderScheduler
 import com.classvibe.app.update.UpdateWorker
+import com.classvibe.app.util.AppShortcuts
 
 class ClassVibeApp : Application() {
     override fun onCreate() {
@@ -13,5 +14,6 @@ class ClassVibeApp : Application() {
         // Re-register all alarms on every app start (cheap, and covers upgrades from older versions).
         ReminderScheduler.enqueueImmediateResync(this)
         UpdateWorker.schedule(this) // the worker itself respects the "Check for updates" setting
+        AppShortcuts.publish(this)
     }
 }

@@ -57,6 +57,7 @@ object OcrTimetableParser {
         var right = Int.MIN_VALUE
         var bottom = Int.MIN_VALUE
         var span = 1
+        var rowSpan = 1
         var covered = false
         val hasRect get() = left != Int.MAX_VALUE
 
@@ -75,6 +76,9 @@ object OcrTimetableParser {
                 val src = cells[r][c]
                 val dst = m.cells[c][r]
                 dst.text = if (src.covered) "" else src.text
+                dst.covered = src.covered
+                dst.span = src.rowSpan   // a class spanning two time rows becomes a 2-slot span
+                dst.rowSpan = src.span
                 if (src.hasRect) dst.include(src.left, src.top, src.right, src.bottom)
             }
             return m
@@ -285,6 +289,27 @@ object OcrTimetableParser {
                     next++
                 }
                 c = next
+            }
+        }
+        // Vertically merged cells: no horizontal ruling line between two rows inside a column.
+        for (c in 0 until m.cols) {
+            var r = 0
+            while (r < m.rows) {
+                val anchor = m.cells[r][c]
+                if (anchor.covered) { r++; continue }
+                val x0 = xs[c] + 3
+                val x1 = xs[minOf(m.cols, c + anchor.span)] - 3
+                var next = r + 1
+                while (next < m.rows && !m.cells[next][c].covered && !detector.hasHorizontalLine(ys[next], x0, x1)) {
+                    val below = m.cells[next][c]
+                    anchor.text = (anchor.text + " " + below.text).trim()
+                    anchor.include(below.left, below.top, below.right, below.bottom)
+                    anchor.rowSpan++
+                    below.covered = true
+                    below.text = ""
+                    next++
+                }
+                r = next
             }
         }
         return m

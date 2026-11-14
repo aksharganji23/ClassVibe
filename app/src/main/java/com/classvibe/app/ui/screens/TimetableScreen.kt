@@ -94,6 +94,7 @@ fun TimetableScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            item { androidx.compose.material3.AssistChip(onClick = onGoToImport, label = { Text("＋ Import") }) }
             item { FilterChip(selected = !gridView, onClick = { gridView = false }, label = { Text("☰ List") }) }
             item { FilterChip(selected = gridView, onClick = { gridView = true }, label = { Text("▦ Grid") }) }
             if (!gridView) {

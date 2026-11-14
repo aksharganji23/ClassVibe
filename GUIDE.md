@@ -21,6 +21,8 @@ Step-by-step guide to getting ClassVibe **v1.1.0 "Launchpad"** onto GitHub, buil
 - [Part J: Play Protect and developer verification](#part-j--play-protect--developer-verification)
 - [Part K: Troubleshooting](#part-k--troubleshooting)
 - [Part L: Feature tour](#part-l--feature-tour-where-is-everything)
+- [Part M: Download website (GitHub Pages)](#part-m--download-website-github-pages)
+- [Part N: Sharing with QR codes](#part-n--sharing-with-qr-codes)
 
 ---
 
@@ -246,7 +248,7 @@ Share the same Releases link with classmates. From now on they never need to dow
 
 ## Part L: Feature tour (where is everything)
 
-**Swipe left and right** between the six tabs:
+**Swipe left and right** between the four tabs. **⚙️** (top right) opens Settings, **🔔** sends a test reminder.
 
 1. **Today:**
    - live status of each class (upcoming, in progress, completed or cancelled), with a progress bar;
@@ -256,27 +258,56 @@ Share the same Releases link with classmates. From now on they never need to dow
    - **✅ Attended / ❌ Missed** buttons once a class starts.
 2. **Timetable:**
    - list view (jumps to **today** automatically) or **grid view**;
-   - tap a class to edit it, including week parity (every, odd or even weeks).
+   - tap a class to edit it, including week parity (every, odd or even weeks);
+   - **＋ Import**: screenshots, camera photo (with tips + auto-crop), CSV, paste, sample or manual entry.
 3. **Exams:**
-   - **Add exam**: subject, room and time dropdowns from your timetable, plus "Other…";
+   - **Add exam**: searchable subject picker with colour dots (other subjects show "(not in timetable)");
    - **Exam week**: add many exams at once;
    - **Import exams from CSV**.
 4. **Stats:**
-   - attendance % per subject, with "attend N more" or "can miss N" hints;
-   - streak, weekly hours and busiest day.
-5. **Import:**
-   - screenshots (several at once), camera photo, CSV, paste, sample or manual entry;
-   - templates to download.
-6. **Settings:**
-   - reminder times;
-   - message style, ratings and your own messages;
-   - exam types and times;
-   - weekend prep;
-   - semester dates and holidays;
-   - theme and permissions;
-   - backup, CSV, share and QR;
-   - updates and About.
+   - **🧮 Bunk planner**: attendance % calculator, "can I skip N classes?", day planner, safe days;
+   - attendance % per subject, streak, weekly hours and busiest day.
+
+**Settings (⚙️):**
+- reminder times, message style, ratings and your own messages;
+- exam types – tap **Edit** to change each type's countdown (days before, daily final days, weekly);
+- weekend prep, semester dates and holidays, theme and permissions;
+- **🔳 QR sharing**, **📆 Export to calendar (.ics)**, backup/restore, CSV, **phone cloud backup** toggle;
+- updates and About.
+
+**App shortcuts:** long-press the ClassVibe icon → 🔔 Next class, 📅 Today, 📝 Add exam, 🧮 Bunk planner.
 
 **Elsewhere:**
 - **Home-screen widget:** long-press the home screen → **Widgets → ClassVibe – Now & Next**.
 - **🔔 bell** in the top bar: sends a test reminder.
+
+---
+
+## Part M: Download website (GitHub Pages)
+
+The `site/` folder is a small download page. The workflow `.github/workflows/pages.yml` publishes it.
+
+**One-time setup:**
+1. On GitHub open your repo → **Settings → Pages**.
+2. Under **Build and deployment → Source**, choose **GitHub Actions**.
+3. Go to **Actions → Deploy website → Run workflow** (or just push a change in `site/`).
+4. After ~1 minute the site is live at **https://aksharganji23.github.io/ClassVibe/**.
+5. Repo home page → ⚙️ next to **About** → tick **Use your GitHub Pages website** → Save.
+
+**Links that never change:**
+- Website: `https://aksharganji23.github.io/ClassVibe/`
+- Latest APK (direct download): `https://github.com/aksharganji23/ClassVibe/releases/latest/download/ClassVibe.apk`
+
+The page reads the latest version number and size from GitHub automatically, so you do **not** need to edit it for each release.
+
+## Part N: Sharing with QR codes
+
+**Share:** ⚙️ → **🔳 QR sharing → Share**. Tick what to send (classes for some or all days, exams by type, holidays, semester dates, subjects; attendance is off by default), pick a funny theme and caption, then **Share** or **Save**. Big timetables are split into parts (1/2, 2/2…).
+
+**Scan:** **🔳 QR sharing → Scan** → camera or a saved image. ClassVibe shows what will be added:
+- items you already have are **never changed**;
+- exact duplicates are **skipped**;
+- clashes (overlapping times) are listed, tick **add anyway** for any you want;
+- multi-part codes: scan the parts in any order.
+
+Scanning uses Google's code scanner, so ClassVibe still needs **no camera permission**.

@@ -16,7 +16,7 @@ plugins {
 // versionCode = MAJOR*1_000_000 + MINOR*10_000 + PATCH*100 + (beta number, or 99 for final)
 //   1.1.0-beta.1 -> 1010001     1.1.0 -> 1010099     1.2.3 -> 1020399
 // ---------------------------------------------------------------------------
-val appVersion: String = (project.findProperty("classvibe.version") as String?)?.removePrefix("v") ?: "1.1.0"
+val appVersion: String = (project.findProperty("classvibe.version") as String?)?.removePrefix("v") ?: "1.2.0"
 
 fun versionCodeOf(name: String): Int {
     val core = name.substringBefore('-')
@@ -140,8 +140,11 @@ dependencies {
     // ML Kit on-device text recognition (bundled model -> fully offline)
     implementation("com.google.mlkit:text-recognition:16.0.1")
 
-    // QR code generation (pure Java, offline)
+    // QR codes: generation (ZXing, offline), camera scanning via Google's code scanner
+    // (no camera permission needed), and scanning QR screenshots from the gallery (offline).
     implementation("com.google.zxing:core:3.5.3")
+    implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
+    implementation("com.google.mlkit:barcode-scanning:17.3.0")
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")

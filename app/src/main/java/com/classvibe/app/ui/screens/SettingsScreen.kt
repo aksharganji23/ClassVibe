@@ -66,13 +66,13 @@ import com.classvibe.app.ui.ReleaseNotes
 import com.classvibe.app.ui.components.ConfirmDialog
 import com.classvibe.app.ui.components.DATE_LABEL
 import com.classvibe.app.ui.components.DateField
-import com.classvibe.app.ui.components.QrCode
 import com.classvibe.app.ui.components.SectionCard
 import com.classvibe.app.ui.components.SelectField
 import com.classvibe.app.ui.components.SwitchRow
 import com.classvibe.app.ui.components.WhatsNewDialog
 import com.classvibe.app.ui.theme.Cv
 import com.classvibe.app.update.UpdateChecker
+import com.classvibe.app.util.ShareFiles
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
@@ -101,13 +101,16 @@ fun SettingsScreen(
     notificationsEnabled: Boolean,
     exactAlarmsAllowed: Boolean,
     onEnableNotifications: () -> Unit,
-    onAllowExactAlarms: () -> Unit
+    onAllowExactAlarms: () -> Unit,
+    cloudBackup: Boolean,
+    onOpenQr: () -> Unit
 ) {
     val context = LocalContext.current
+    var showCalendar by remember { mutableStateOf(false) }
+    var editSchedule by remember { mutableStateOf<ExamType?>(null) }
     val scope = rememberCoroutineScope()
     var confirmClear by remember { mutableStateOf(false) }
     var confirmWipe by remember { mutableStateOf(false) }
-    var showQr by remember { mutableStateOf(false) }
     var showWhatsNew by remember { mutableStateOf(false) }
     var showPrivacy by remember { mutableStateOf(false) }
 
@@ -208,7 +211,15 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Checkbox(checked = type.name !in prefs.disabledExamTypes, onCheckedChange = { vm.toggleExamType(type.name) })
-                        Text("${type.emoji} ${type.label}", style = MaterialTheme.typography.bodyLarge)
+                        Column(Modifier.weight(1f)) {
+                            Text("${type.emoji} ${type.label}", style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                scheduleSummary(type, prefs),
+                                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 2, overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        TextButton(onClick = { editSchedule = type }) { Text("Edit") }
                     }
                 }
                 TimeSelect("Countdown reminders at", prefs.examCountdownMinutes, vm::setExamCountdownTime)
@@ -310,6 +321,9 @@ fun SettingsScreen(
         // ------------------------------------------------ Backup
         item {
             SectionCard("💾 Backup & sharing", "Everything stays on your phone unless you export it") {
+                Button(onClick = onOpenQr, modifier = Modifier.fillMaxWidth()) { Text("🔳 QR sharing (share / scan)") }
+                OutlinedButton(onClick = { showCalendar = true }, modifier = Modifier.fillMaxWidth()) { Text("📆 Export to calendar (.ics)") }
+                HorizontalDivider()
                 Button(onClick = { backupSaver.launch("classvibe_backup_${LocalDate.now()}.json") }, modifier = Modifier.fillMaxWidth()) { Text("⬆️ Export full backup (JSON)") }
                 OutlinedButton(onClick = { backupPicker.launch(arrayOf("application/json", "text/plain", "application/octet-stream")) }, modifier = Modifier.fillMaxWidth()) { Text("⬇️ Restore from backup") }
                 OutlinedButton(onClick = { csvSaver.launch("classvibe_timetable.csv") }, modifier = Modifier.fillMaxWidth()) { Text("📄 Export timetable CSV") }
@@ -319,10 +333,11 @@ fun SettingsScreen(
                         .putExtra(Intent.EXTRA_TEXT, vm.timetableCsv())
                     context.startActivity(Intent.createChooser(send, "Share timetable").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 }, modifier = Modifier.fillMaxWidth()) { Text("📤 Share timetable") }
-                OutlinedButton(onClick = { showQr = true }, modifier = Modifier.fillMaxWidth()) { Text("🔳 Show timetable QR code") }
-                Text(
-                    "Friends scan the QR with any scanner (e.g. Google Lens), copy the text, then use Import → Paste CSV.",
-                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
+                HorizontalDivider()
+                SwitchRow(
+                    "Phone cloud backup",
+                    "Let Android back up ClassVibe data to your Google account (restored when you set up a new phone)",
+                    cloudBackup, vm::setCloudBackup
                 )
             }
         }
@@ -378,19 +393,95 @@ fun SettingsScreen(
             confirmButton = { TextButton(onClick = { showPrivacy = false }) { Text("Got it") } }
         )
     }
-    if (showQr) {
-        val csv = remember { vm.timetableCsv() }
-        val qr = remember(csv) { QrCode.generate(csv) }
-        AlertDialog(
-            onDismissRequest = { showQr = false },
-            title = { Text("🔳 Timetable QR") },
-            text = {
-                if (qr != null) Image(qr, contentDescription = "Timetable QR code", modifier = Modifier.size(280.dp))
-                else Text("Your timetable is too big for one QR code. Use \"Share timetable\" or \"Export timetable CSV\" instead.")
-            },
-            confirmButton = { TextButton(onClick = { showQr = false }) { Text("Close") } }
-        )
+    if (showCalendar) CalendarExportDialog(vm, prefs) { showCalendar = false }
+    editSchedule?.let { type -> ExamScheduleDialog(type, prefs, onSave = { vm.setExamSchedule(type.name, it) }) { editSchedule = null } }
+}
+
+private fun scheduleSummary(type: ExamType, prefs: AppPrefs): String {
+    val s = com.classvibe.app.notifications.ExamPlanner.scheduleFor(type, prefs)
+    val parts = listOfNotNull(
+        if (s.weekly) "weekly" else null,
+        s.milestones.takeIf { it.isNotEmpty() }?.joinToString("/", postfix = " days before"),
+        if (s.dailyFinal > 0) "daily in last ${s.dailyFinal}" else null
+    )
+    return (parts.joinToString(" • ").ifEmpty { "no countdown" }) + " " + com.classvibe.app.notifications.ExamPlanner.fixedExtras(type) +
+        if (prefs.examSchedules.containsKey(type.name)) " (custom)" else ""
+}
+
+@Composable
+private fun ExamScheduleDialog(type: ExamType, prefs: AppPrefs, onSave: (com.classvibe.app.data.ExamSchedule?) -> Unit, onDismiss: () -> Unit) {
+    val current = com.classvibe.app.notifications.ExamPlanner.scheduleFor(type, prefs)
+    var days by remember { mutableStateOf(current.milestones.joinToString(", ")) }
+    var daily by remember { mutableStateOf(current.dailyFinal) }
+    var weekly by remember { mutableStateOf(current.weekly) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("${type.emoji} ${type.label} reminders") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    days, { days = it }, label = { Text("Days before (comma-separated)") },
+                    placeholder = { Text("90, 60, 30, 15, 7, 3, 1") }, modifier = Modifier.fillMaxWidth()
+                )
+                SelectField(
+                    "Daily reminders in the final…", if (daily == 0) "Off" else "$daily days",
+                    listOf("Off") + (1..14).map { "$it days" },
+                    { picked -> daily = picked.substringBefore(' ').toIntOrNull() ?: 0 }, Modifier.fillMaxWidth()
+                )
+                SwitchRow("Weekly reminder", "Every week from the day you add the exam", weekly, { weekly = it })
+                Text(
+                    "Always included: " + com.classvibe.app.notifications.ExamPlanner.fixedExtras(type).removePrefix("+ "),
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                onSave(com.classvibe.app.data.ExamSchedule(com.classvibe.app.data.ExamSchedule.parseDays(days), daily, weekly))
+                onDismiss()
+            }) { Text("Save") }
+        },
+        dismissButton = {
+            Row {
+                TextButton(onClick = { onSave(null); onDismiss() }) { Text("Reset to default") }
+                TextButton(onClick = onDismiss) { Text("Cancel") }
+            }
+        }
+    )
+}
+
+@Composable
+private fun CalendarExportDialog(vm: AppViewModel, prefs: AppPrefs, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    var opts by remember { mutableStateOf(com.classvibe.app.data.CalendarExport.Options()) }
+    val saver = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/calendar")) { uri ->
+        if (uri != null) context.contentResolver.openOutputStream(uri)?.use { it.write(vm.buildIcs(opts).toByteArray()) }
     }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("📆 Export to calendar") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                SwitchRow("🗓️ Classes", "Weekly events" + if (prefs.semesterEnd != null) " until the semester ends" else " for 26 weeks", opts.classes, { opts = opts.copy(classes = it) })
+                SwitchRow("📝 Exams", null, opts.exams, { opts = opts.copy(exams = it) })
+                SwitchRow("🏖️ Holidays", null, opts.holidays, { opts = opts.copy(holidays = it) })
+                SwitchRow("⏰ Add calendar reminders", "10 min before classes • 1 day and 1 hour before exams", opts.reminders, { opts = opts.copy(reminders = it) })
+                Text(
+                    "Samsung Calendar, Outlook and most calendar apps open the file directly. Google Calendar: save the file, then import it at calendar.google.com → Settings → Import.",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { ShareFiles.openOrShare(context, "classvibe.ics", "text/calendar", vm.buildIcs(opts)); onDismiss() }) { Text("Open / share") }
+        },
+        dismissButton = {
+            Row {
+                TextButton(onClick = { saver.launch("classvibe.ics") }) { Text("Save file") }
+                TextButton(onClick = onDismiss) { Text("Cancel") }
+            }
+        }
+    )
 }
 
 @Composable

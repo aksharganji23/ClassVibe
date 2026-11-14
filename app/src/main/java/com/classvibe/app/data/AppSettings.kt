@@ -28,6 +28,27 @@ enum class MessageStyle(val label: String, val description: String) {
     PLAIN("Plain", "Just the facts, no jokes")
 }
 
+/**
+ * User-edited reminder schedule for one exam type.
+ * milestones = "days before" reminders, dailyFinal = daily reminders in the last N days, weekly = every week.
+ */
+data class ExamSchedule(val milestones: List<Int>, val dailyFinal: Int, val weekly: Boolean) {
+    fun encode(): String = milestones.joinToString(",") + ";" + dailyFinal + ";" + (if (weekly) 1 else 0)
+
+    companion object {
+        fun decode(s: String): ExamSchedule? {
+            val parts = s.split(';')
+            if (parts.size != 3) return null
+            val ms = parts[0].split(',').mapNotNull { it.trim().toIntOrNull() }.filter { it in 1..365 }.distinct().sortedDescending()
+            return ExamSchedule(ms, parts[1].toIntOrNull()?.coerceIn(0, 30) ?: 0, parts[2] == "1")
+        }
+
+        /** "90, 60, 30 days" → [90, 60, 30] */
+        fun parseDays(text: String): List<Int> =
+            text.split(',', ' ', ';').mapNotNull { it.trim().toIntOrNull() }.filter { it in 1..365 }.distinct().sortedDescending()
+    }
+}
+
 /** Everything the user can configure. Defaults are the out-of-the-box experience. */
 data class AppPrefs(
     val themeMode: ThemeMode = ThemeMode.UNSET,
@@ -43,6 +64,8 @@ data class AppPrefs(
     val examCountdownMinutes: Int = 8 * 60,
     val examEveningMinutes: Int = 19 * 60,
     val disabledExamTypes: Set<String> = emptySet(),
+    /** Per exam type (ExamType.name) schedule overrides; missing = built-in default. */
+    val examSchedules: Map<String, ExamSchedule> = emptyMap(),
     // Weekend prep
     val weekendPrep: Boolean = true,
     val weekendDays: Set<Int> = setOf(6, 7),
@@ -89,6 +112,8 @@ object AppSettings {
         val EXAM_COUNTDOWN_TIME = intPreferencesKey("exam_countdown_minutes")
         val EXAM_EVENING_TIME = intPreferencesKey("exam_evening_minutes")
         val EXAM_DISABLED_TYPES = stringSetPreferencesKey("exam_disabled_types")
+        val EXAM_SCHEDULES = stringSetPreferencesKey("exam_schedules") // entries "TYPE=90,60;7;1"
+        val CALENDAR_REMINDERS = booleanPreferencesKey("calendar_export_reminders")
         val WEEKEND = booleanPreferencesKey("weekend_prep")
         val WEEKEND_DAYS = stringSetPreferencesKey("weekend_days")
         val WEEKEND_MORNING = intPreferencesKey("weekend_morning_minutes")
@@ -136,6 +161,10 @@ object AppSettings {
         examCountdownMinutes = p[Keys.EXAM_COUNTDOWN_TIME] ?: (8 * 60),
         examEveningMinutes = p[Keys.EXAM_EVENING_TIME] ?: (19 * 60),
         disabledExamTypes = p[Keys.EXAM_DISABLED_TYPES] ?: emptySet(),
+        examSchedules = (p[Keys.EXAM_SCHEDULES] ?: emptySet()).mapNotNull { entry ->
+            val type = entry.substringBefore('=', "")
+            ExamSchedule.decode(entry.substringAfter('=', ""))?.let { type to it }
+        }.toMap(),
         weekendPrep = p[Keys.WEEKEND] ?: true,
         weekendDays = p[Keys.WEEKEND_DAYS]?.mapNotNull { it.toIntOrNull() }?.toSet() ?: setOf(6, 7),
         weekendMorningMinutes = p[Keys.WEEKEND_MORNING] ?: (10 * 60),
@@ -161,6 +190,12 @@ object AppSettings {
 
     suspend fun setLeads(context: Context, leads: Set<Int>) =
         update(context) { it[Keys.LEADS] = leads.map { l -> l.toString() }.toSet() }
+
+    /** null schedule = reset that exam type to the built-in default. */
+    suspend fun setExamSchedule(context: Context, typeName: String, schedule: ExamSchedule?) = update(context) { p ->
+        val others = (p[Keys.EXAM_SCHEDULES] ?: emptySet()).filterNot { it.startsWith("$typeName=") }.toSet()
+        p[Keys.EXAM_SCHEDULES] = if (schedule == null) others else others + "$typeName=${schedule.encode()}"
+    }
 
     suspend fun addCustomSubject(context: Context, subject: String) {
         val clean = subject.trim()

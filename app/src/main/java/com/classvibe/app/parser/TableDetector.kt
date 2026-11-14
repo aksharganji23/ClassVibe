@@ -78,6 +78,28 @@ class TableDetector(private val bitmap: Bitmap) {
         return merged
     }
 
+    /** True if a horizontal ruling line exists at y between x0..x1 (used to detect vertically merged cells). */
+    fun hasHorizontalLine(yFull: Int, x0Full: Int, x1Full: Int): Boolean {
+        val y = (yFull * scale).roundToInt()
+        val x0 = (x0Full * scale).roundToInt().coerceIn(0, w - 1)
+        val x1 = (x1Full * scale).roundToInt().coerceIn(0, w - 1)
+        if (x1 - x0 < 4) return true
+        var bestFraction = 0.0
+        for (dy in -3..3) {
+            val yy = (y + dy).coerceIn(0, h - 1)
+            var count = 0
+            for (x in x0..x1) if (isDark(x, yy)) count++
+            bestFraction = max(bestFraction, count.toDouble() / (x1 - x0 + 1))
+        }
+        return bestFraction > 0.6
+    }
+
+    /** Outer border of the detected table (for auto-crop), or null. */
+    fun tableBounds(): android.graphics.Rect? {
+        val g = detect() ?: return null
+        return android.graphics.Rect(g.xs.first(), g.ys.first(), g.xs.last(), g.ys.last())
+    }
+
     /** True if a vertical ruling line exists at x between y0..y1 (used to detect merged cells). */
     fun hasVerticalLine(xFull: Int, y0Full: Int, y1Full: Int): Boolean {
         val x = (xFull * scale).roundToInt()
