@@ -1,0 +1,660 @@
+# ClassVibe message bank
+# Format: CATEGORY|style|text
+# style: f = fun, s = savage, m = motivational, t = Tenglish, h = Hinglish
+# Class placeholders: {course} {class_type} {room} {instructor} {start_time} {end_time} {when}
+# Exam placeholders: {exam} {course} {countdown} {days} {date} {time} {room} {emoji}
+# Lines starting with # are ignored. Add your own lines anywhere!
+
+# ---------------- CLASS_LECTURE (80) ----------------
+CLASS_LECTURE|f|🏃‍♂️ Run! {course} starts {when} with {instructor} in Room {room}. Bring your brain! 🧠⚡
+CLASS_LECTURE|s|🚨 Code Red! {instructor} is about to take attendance for {course} in Room {room}. Don't pull a ghost move 👻
+CLASS_LECTURE|f|☕ Wake up, baseline sleeper! {course} at {start_time} in {room}. Time to pretend we're paying attention 😴
+CLASS_LECTURE|f|📚 {course} is calling… and unlike your crush, it actually wants you there. Room {room}, {start_time} 💌
+CLASS_LECTURE|s|🧟 Zombie mode OFF. {course} starts {when} — {instructor} can smell absence from a mile away 👃
+CLASS_LECTURE|f|🎮 Pause the game, champ. {course} respawns in Room {room} at {start_time}. No extra lives for attendance 💀
+CLASS_LECTURE|f|🛸 Aliens checked: 0 excuses found. Get to Room {room} for {course} with {instructor} 👽
+CLASS_LECTURE|f|🍕 Snack break is over. {course} starts at {start_time}. Smuggle the chips responsibly 🤫
+CLASS_LECTURE|f|⏳ {course} starts {when}. Just enough time to look like you've read the slides 😅📖
+CLASS_LECTURE|m|🦸 Not all heroes wear capes — some just show up to lectures on time. Room {room}, go! 💨
+CLASS_LECTURE|f|📢 Breaking news: {instructor} spotted heading to Room {room}. {course} begins at {start_time}. Developing story… 📰
+CLASS_LECTURE|f|🐢 Even at turtle speed you'll make {course} in Room {room}. Probably. 🤞
+CLASS_LECTURE|f|🔋 Battery check: Phone 100%, Brain 12%. Charge up at {course} ⚡🧠
+CLASS_LECTURE|f|🎬 Previously on 'My Degree': you almost skipped {course}. Don't let history repeat. Room {room}, {start_time} 🍿
+CLASS_LECTURE|m|🧠 Fun fact: attending {course} increases intelligence by 0.0001%. Compound interest, baby 📈
+CLASS_LECTURE|f|🚀 {course} liftoff {when}. Mission control ({instructor}) awaits in Room {room} 🧑‍🚀
+CLASS_LECTURE|s|😤 {instructor} said "everyone will be present today". Prove them right. {course}, {start_time} ✅
+CLASS_LECTURE|m|🐣 Rise and grind (or just rise). {course} in Room {room} at {start_time} 🌅
+CLASS_LECTURE|f|📍 GPS says: route to Room {room}, leave now. Destination: {course}. Excuses: not found 🗺️
+CLASS_LECTURE|s|🫠 Your bed is lying to you. {course} with {instructor} starts at {start_time}. Choose wisely 🛏️❌
+CLASS_LECTURE|f|🤖 Beep boop. Human not detected in Room {room}. {course} commencing {when} 🔔
+CLASS_LECTURE|f|🎯 Today's quest: survive {course}. Reward: +50 XP and fewer panic attacks before exams 🏆
+CLASS_LECTURE|f|🥷 Sneak in quietly if you must, but SNEAK IN. {course} in Room {room} with {instructor} 🤫
+CLASS_LECTURE|s|📝 Proxy attendance is not a personality trait. Go to {course} yourself. Room {room}, {start_time} 🙃
+CLASS_LECTURE|s|💅 Main character energy: arriving to {course} on time. Side character energy: "is attendance compulsory?" 🎭
+CLASS_LECTURE|f|🌪️ Drop everything (except your notes). {course} at {start_time}, Room {room} 🗒️
+CLASS_LECTURE|f|🛎️ Ding ding! {course} served hot at {start_time} in Room {room}. Chef {instructor} is waiting 👨‍🍳
+CLASS_LECTURE|m|📉 Attendance feeling a little low? {course} {when} is your comeback arc 📈🔥
+CLASS_LECTURE|f|😎 Sunglasses on, confidence up. Walk into {course} like you totally did the homework. Room {room} 🕶️
+CLASS_LECTURE|s|🐌 {course} won't wait for you, but {instructor}'s side-eye definitely will 👀
+CLASS_LECTURE|m|🎓 Future you with a degree says thanks for going to {course}. Present you says "ugh". Go anyway! 💪
+CLASS_LECTURE|f|🍵 Sip, sprint, sit. {course} starts at {start_time} in Room {room} 🏁
+CLASS_LECTURE|f|📡 Signal received: {course} — {start_time} to {end_time}. Location: Room {room}. Operative: {instructor} 🕵️
+CLASS_LECTURE|s|🔥 {course} is happening with or without you — preferably WITH you 🙌
+CLASS_LECTURE|f|🧭 Your compass points to Room {room}. Your heart points to bed. Follow the compass. {course}, {start_time} 🧭
+CLASS_LECTURE|f|🎤 And now, live from Room {room}… it's {course} with {instructor}! Doors open {when} 🎟️
+CLASS_LECTURE|s|🙈 "I'll watch the recording" — said every student who never watched the recording. {course}, {start_time}
+CLASS_LECTURE|f|🧃 Hydrate, caffeinate, participate. {course} in Room {room} {when} 💧
+CLASS_LECTURE|m|🌱 Small steps daily = big results later. Step one: show up to {course} at {start_time} 🌿
+CLASS_LECTURE|f|🚪 That door to Room {room} won't open itself. {course} starts {when} 🚪
+CLASS_LECTURE|s|📸 {instructor} is loading the attendance sheet… 87%… 94%… GET THERE. {course} ⏱️
+CLASS_LECTURE|f|🦉 Night owl? Cute. {course} is a day-time bird. Room {room}, {start_time} 🐦
+CLASS_LECTURE|f|🎒 Bag? ✅ Pen? ✅ Will to live? Optional. {course} in Room {room} at {start_time} 🖊️
+CLASS_LECTURE|s|🧾 Your excuse list is longer than the syllabus. {course} starts {when} — no new excuses accepted 🚫
+CLASS_LECTURE|m|💡 One lecture can change how you see a whole topic. Maybe today's {course} is that one ✨
+CLASS_LECTURE|f|🎢 Buckle up! {course} with {instructor} departs from Room {room} at {start_time} 🎢
+CLASS_LECTURE|f|📦 Delivery update: 1 student, out for delivery to Room {room}. Expected arrival: {start_time} 🚚
+CLASS_LECTURE|s|😬 {instructor} remembers faces. Especially the missing ones. {course}, {start_time} 👁️
+CLASS_LECTURE|f|🎲 Roll for initiative: you rolled "go to {course}". Room {room}, {start_time} 🎲
+CLASS_LECTURE|f|🧙 A wizard is never late. Neither is a student who leaves now. {course}, Room {room} 🪄
+CLASS_LECTURE|m|🏆 Consistency beats cramming. Show up to {course} today — exam-you will be grateful 🙏
+CLASS_LECTURE|f|🍿 The {course} show starts {when}. Front-row seats are still free (they always are) 🎭
+CLASS_LECTURE|s|📵 Put the reels down. Real {course} is in Room {room} at {start_time} 📱➡️📚
+CLASS_LECTURE|f|🛰️ Satellite confirms: you are NOT in Room {room}. {course} starts {when} 🛰️
+CLASS_LECTURE|f|🧩 Missing piece of today's puzzle: you, in {course}. Room {room}, {start_time} 🧩
+CLASS_LECTURE|m|🌟 Show up, take notes, ask one question. That's a win today in {course} ⭐
+CLASS_LECTURE|s|🚫 Skipping {course} today is a loan from your future self — with terrible interest 💸
+CLASS_LECTURE|f|🎵 Now playing: "Walking to Room {room}" ft. {instructor}. Track length: {course} 🎶
+CLASS_LECTURE|f|🧲 Room {room} is pulling you in like a magnet. Resistance is futile. {course}, {start_time} 🧲
+CLASS_LECTURE|f|🐧 Waddle faster! {course} starts {when} in Room {room} 🐧
+CLASS_LECTURE|s|🔔 This is your reminder. There won't be a reminder for the reminder. {course}, Room {room} ⏰
+CLASS_LECTURE|m|📈 Every class you attend is one less topic to panic about later. {course}, {start_time} 📚
+CLASS_LECTURE|f|🧁 Treat yourself: attend {course}, then reward yourself with a snack. Deal? Room {room} 🍪
+CLASS_LECTURE|f|🗝️ Achievement unlocked soon: "Attended {course}". Requirements: walk to Room {room} 🔓
+CLASS_LECTURE|s|🥶 Cold truth: {instructor} doesn't care about your sleep schedule. {course} at {start_time} ❄️
+CLASS_LECTURE|f|🎯 Bullseye: Room {room}. Target time: {start_time}. Mission: {course} 🎯
+CLASS_LECTURE|f|🚦 Green light! Go go go — {course} starts {when} 🟢
+CLASS_LECTURE|m|🤝 Your classmates are already heading to {course}. Go be part of the squad 🫂
+CLASS_LECTURE|f|🐱 Even cats show up for food on time. Show up for {course} at {start_time} 🐾
+CLASS_LECTURE|s|💀 "5 more minutes" — famous last words before missing {course}. Get up 🛌
+CLASS_LECTURE|f|📚 Knowledge is power, and {course} is the charging station. Room {room} 🔌
+CLASS_LECTURE|f|🎪 Ladies and gentlemen, the {course} circus begins {when}! Ringmaster: {instructor} 🎪
+CLASS_LECTURE|m|🌄 New class, new chance to understand something cool. {course}, Room {room} 🌄
+CLASS_LECTURE|s|📋 Attendance register has a seat with your name. Don't make it cry. {course}, {start_time} 😢
+CLASS_LECTURE|f|🧠 Brain.exe needs an update. Install location: Room {room}. Update: {course} 💾
+CLASS_LECTURE|f|🦄 Rare sighting today: you, early to {course}? Let's make it happen 🦄
+CLASS_LECTURE|s|⚠️ Warning: low attendance detected in your future. Fix it now — {course} {when} ⚠️
+CLASS_LECTURE|f|🏃‍♀️ Speedrun any%: reach Room {room} before {start_time}. Category: {course} 🏁
+CLASS_LECTURE|m|🔥 You've survived 100% of your hard days so far. {course} today is easy mode 💪
+CLASS_LECTURE|f|🎁 Surprise inside Room {room}: knowledge! Unboxing {when} with {instructor} 🎁
+
+# ---------------- CLASS_LAB (50) ----------------
+CLASS_LAB|f|🧪 Lab time for {course}! Try not to break anything expensive this time 💸 Room {room}
+CLASS_LAB|f|💻 {course} lab starts {when}. Pray the systems boot on the first try 🙏 Room {room}
+CLASS_LAB|s|🔬 Lab record not written? {instructor} will notice. {course} lab at {start_time} 👀
+CLASS_LAB|f|⚗️ Goggles on, nerd mode on. {course} lab in Room {room} at {start_time} 🥽
+CLASS_LAB|f|🐞 Bugs are waiting for you in the {course} lab. Bring your debugging spray 🧴
+CLASS_LAB|s|🖥️ "It worked on my laptop" won't save you in the {course} lab. Room {room}, {start_time} 😬
+CLASS_LAB|f|🔌 Plug in, log in, zone in. {course} lab starts {when} ⚡
+CLASS_LAB|m|🛠️ Labs are where theory finally makes sense. {course} in Room {room} at {start_time} 💡
+CLASS_LAB|f|🧯 Fire extinguisher located? Good. {course} lab with {instructor} {when} 🔥
+CLASS_LAB|f|🤖 The machines in Room {room} miss you. {course} lab starts at {start_time} 🖲️
+CLASS_LAB|s|📓 Observation book, record book, brain — bring all three. {course} lab {when} 📚
+CLASS_LAB|f|⌨️ Ctrl+C, Ctrl+V your way to Room {room}. {course} lab at {start_time} 😏
+CLASS_LAB|f|🧬 Experiment of the day: can you reach the {course} lab on time? Hypothesis: yes 🧪
+CLASS_LAB|m|🏗️ Every program you debug today makes you a better engineer. {course} lab, Room {room} 🧠
+CLASS_LAB|f|🛰️ Lab systems online. Student missing. {course}, Room {room}, {start_time} 📡
+CLASS_LAB|s|🙃 Viva questions might pop up in the {course} lab. Prepare a smart-sounding "it depends" 😅
+CLASS_LAB|f|🎧 Headphones on, code on. {course} lab session starts {when} 🎶
+CLASS_LAB|f|🧱 Build something cool (or at least something that compiles). {course} lab, {start_time} 🧱
+CLASS_LAB|s|🚨 Lab attendance counts double in your soul. {course} lab in Room {room} 🚨
+CLASS_LAB|f|🍝 Spaghetti code tasting session in the {course} lab. Chef {instructor} presiding 🍝
+CLASS_LAB|m|🎯 Two focused hours in the {course} lab beat ten panicked hours before the lab exam 🎯
+CLASS_LAB|f|🧑‍🔬 Lab coat optional. Showing up mandatory. {course} at {start_time}, Room {room} 🥼
+CLASS_LAB|f|💾 Save early, save often, and leave for the {course} lab NOW 💾
+CLASS_LAB|s|⏰ {instructor} counts late arrivals like compile errors. {course} lab {when} ❌
+CLASS_LAB|f|🔭 Explore, experiment, eat snacks (outside the lab). {course} lab at {start_time} 🔭
+CLASS_LAB|f|🧲 Room {room} has the strongest Wi-Fi on campus (citation needed). {course} lab {when} 📶
+CLASS_LAB|m|🌟 Labs are your playground. Go break things (safely) in {course}! 🧩
+CLASS_LAB|f|🐍 Snakes in the lab? No — just Python. Maybe. {course} lab in Room {room} 🐍
+CLASS_LAB|s|📋 Record submission + lab session = double trouble if you skip. {course}, {start_time} 😤
+CLASS_LAB|f|🛸 Beam yourself to Room {room}. {course} lab begins {when} 🛸
+CLASS_LAB|f|🔋 Laptop charged? Brain charged? {course} lab at {start_time} ⚡
+CLASS_LAB|m|🧠 Hands-on learning sticks the longest. {course} lab with {instructor} 💪
+CLASS_LAB|f|🧩 Today's puzzle: make the output match the expected output. Location: {course} lab 🧩
+CLASS_LAB|s|💣 One missed lab = one painful lab exam. Defuse it — {course} lab {when} 💣
+CLASS_LAB|f|🎮 Lab = real-life coding game. Level: {course}. Server: Room {room} 🎮
+CLASS_LAB|f|🍀 May your code compile on the first try in the {course} lab today 🍀
+CLASS_LAB|f|🧹 Clean desk, clean code. {course} lab in Room {room} at {start_time} ✨
+CLASS_LAB|s|👀 Copying from your neighbour's screen is not "collaboration". {course} lab {when} 🙅
+CLASS_LAB|m|📈 Each lab experiment you finish is one less thing to learn the night before. {course} 🙌
+CLASS_LAB|f|🔧 Tools ready, mind ready. {course} lab with {instructor} at {start_time} 🔧
+CLASS_LAB|f|🚀 Deploying you to Room {room}… ETA {start_time}. {course} lab 🚀
+CLASS_LAB|f|🎬 Lights, camera, compile! {course} lab starts {when} 🎬
+CLASS_LAB|s|🐢 The lab systems are slow. Don't you be slower. {course}, Room {room} 🏃
+CLASS_LAB|m|🤝 Pair up, help a friend, learn twice. {course} lab at {start_time} 🫶
+CLASS_LAB|f|📟 Pager alert: {course} lab needs its favourite student in Room {room} 📟
+CLASS_LAB|f|🌋 Volcano of output errors expected in the {course} lab. Bring calm 😌
+CLASS_LAB|s|🙅 "Sir, system not working" only works once per semester. {course} lab {when}
+CLASS_LAB|f|🧃 Juice box + debugger = perfect lab combo. {course} at {start_time} 🧃
+CLASS_LAB|m|🏅 Finishing the experiment today = free time later. {course} lab, Room {room} 🏅
+CLASS_LAB|f|🛎️ Lab bell is ringing! {course} with {instructor}, {start_time} to {end_time} 🛎️
+
+# ---------------- CLASS_TUTORIAL (30) ----------------
+CLASS_TUTORIAL|f|✏️ Tutorial time for {course}! Bring doubts, leave with answers. Room {room} 💬
+CLASS_TUTORIAL|m|🙋 Tutorials are where "I don't get it" becomes "oh, that's easy". {course} at {start_time} 💡
+CLASS_TUTORIAL|f|🧮 Problem-solving party in Room {room}! {course} tutorial {when} 🎉
+CLASS_TUTORIAL|s|📝 That homework you "almost finished"? {course} tutorial is {when}. Good luck 😅
+CLASS_TUTORIAL|f|🤓 Small class, big brain energy. {course} tutorial with {instructor} at {start_time} 🧠
+CLASS_TUTORIAL|f|🎯 Practice makes… fewer mistakes. {course} tutorial in Room {room} 🎯
+CLASS_TUTORIAL|s|👀 Tutorials are small. Your absence will be VERY visible. {course}, {start_time} 🔍
+CLASS_TUTORIAL|m|🌱 Ask that one question you've been scared to ask. {course} tutorial {when} 🌱
+CLASS_TUTORIAL|f|📐 Bring a pen, bring a doubt, bring snacks for later. {course} tutorial, Room {room} ✏️
+CLASS_TUTORIAL|f|🧩 Solve, discuss, repeat. {course} tutorial starts at {start_time} 🔁
+CLASS_TUTORIAL|s|🙃 "I'll ask my friend later" — your friend is going to the {course} tutorial. Join them 🫠
+CLASS_TUTORIAL|f|🏋️ Brain gym session: {course} tutorial, Room {room}. Reps: lots 💪
+CLASS_TUTORIAL|m|💪 Every problem you solve today is one you won't fear in the exam. {course} tutorial 🔥
+CLASS_TUTORIAL|f|🕵️ Case of the confusing concept — Detective {instructor} cracks it {when} in Room {room} 🔎
+CLASS_TUTORIAL|f|🍪 Tutorial now, cookies after. That's the deal. {course} at {start_time} 🍪
+CLASS_TUTORIAL|s|📉 Skipping tutorials is how "easy subject" becomes "backlog subject". {course} {when} 😬
+CLASS_TUTORIAL|f|🎲 Random question incoming from {instructor}. Odds it's you: high. {course} tutorial 🎲
+CLASS_TUTORIAL|m|🧠 Tutorials turn lectures into skills. {course}, Room {room}, {start_time} 🛠️
+CLASS_TUTORIAL|f|🛎️ Doubt-clearing service now open in Room {room}. {course} tutorial {when} 🛎️
+CLASS_TUTORIAL|f|🚴 Pedal faster — {course} tutorial starts at {start_time} 🚴
+CLASS_TUTORIAL|s|🙄 "Tutorials are optional" — said nobody who passed easily. {course}, Room {room}
+CLASS_TUTORIAL|f|📒 Fresh notebook page, fresh start. {course} tutorial with {instructor} 📒
+CLASS_TUTORIAL|m|🌟 You understand more than you think. Prove it at the {course} tutorial today ✨
+CLASS_TUTORIAL|f|🧑‍🏫 {instructor} has problems. Literally — practice problems. {course} tutorial {when} 📄
+CLASS_TUTORIAL|f|🏃 Tutorial sprint! Room {room} before {start_time}. Subject: {course} 🏁
+CLASS_TUTORIAL|s|🧯 Put out the confusion fire before exams. {course} tutorial {when} 🔥
+CLASS_TUTORIAL|f|🥳 Small class = more attention = more learning. {course} tutorial, {start_time} 🥳
+CLASS_TUTORIAL|m|🗝️ The key to that tricky topic is in the {course} tutorial. Go get it 🔑
+CLASS_TUTORIAL|f|🧃 Grab a drink and your doubts. {course} tutorial in Room {room} {when} 🧃
+CLASS_TUTORIAL|f|📣 Tutorial roll call in Room {room} at {start_time}. Be there for {course} 📣
+
+# ---------------- Time-specific (40) ----------------
+CLASS_NOW|s|🔔 It's {start_time}. {course} is starting RIGHT NOW in Room {room}. Why are you reading this?! 🏃
+CLASS_NOW|f|🚨 Showtime! {course} is live in Room {room} 🎬
+CLASS_NOW|s|⏰ {course} just started. Every second counts — move! 🏃‍♂️💨
+CLASS_NOW|f|🎬 Action! {course} with {instructor} has begun in Room {room} 🎥
+CLASS_NOW|f|🟢 {course} is ON. Slide into Room {room} like a ninja 🥷
+CLASS_NOW|s|😱 Class started, you didn't. Fix that: {course}, Room {room} 🚪
+CLASS_NOW|m|💨 Late is better than absent. {course} just started — go now! 🏃
+CLASS_NOW|f|📣 {instructor} has entered the chat (Room {room}). {course} is live 💬
+CLASS_NOW|f|🎯 Starting bell for {course}! Room {room}, now 🔔
+CLASS_NOW|s|🫣 If you're still in bed, {course} is already in session. Just saying 🛏️
+CLASS_SOON|f|⚡ Only minutes left! {course} starts {when} in Room {room} 🏃
+CLASS_SOON|s|🏁 Final countdown: {course} {when}. If you're not walking, you're late 🚶‍♂️💨
+CLASS_SOON|f|⏱️ Tick-tock! {course} at {start_time} — that's {when} 🕒
+CLASS_SOON|f|🚀 Launch in T-minus a few minutes: {course}, Room {room} 🚀
+CLASS_SOON|s|😬 {course} starts {when}. Stairs or lift, just MOVE 🛗
+CLASS_SOON|f|🎯 Last call for {course}! Doors close {when} 🚪
+CLASS_SOON|m|💪 You can still make it! {course} in Room {room} {when} 🏃‍♀️
+CLASS_SOON|f|🏎️ Formula 1 mode: Room {room} in record time. {course} {when} 🏁
+CLASS_SOON|s|🫵 Yes, you. {course}. {when}. Go. 🏃
+CLASS_SOON|f|🛎️ Almost time! {course} with {instructor} {when} 🛎️
+CLASS_SOON|f|📍 You're {when} away from {course}. Room {room} 📍
+CLASS_SOON|s|⏰ Snooze button disabled. {course} {when} 🔕
+CLASS_SOON|f|🎒 Grab your bag — {course} starts {when} in Room {room} 🎒
+CLASS_SOON|m|🌟 Quick! A few minutes to {course}. You've got this 💫
+CLASS_SOON|f|🐇 Hop hop! {course} starts {when} 🐇
+CLASS_EARLY|f|🗓️ Heads up: {course} starts {when} ({start_time}) in Room {room}. Plenty of time to grab a chai ☕
+CLASS_EARLY|m|🧘 Early bird alert: {course} at {start_time}. Get ready calmly, no rush today 🐦
+CLASS_EARLY|f|📌 Coming up {when}: {course} with {instructor}, Room {room} 📌
+CLASS_EARLY|f|🍳 Breakfast first, then {course} at {start_time}. You have time 🥞
+CLASS_EARLY|f|📖 {course} {when}. Perfect time for a 5-minute revision of last class 📚
+CLASS_EARLY|m|🌤️ Plan ahead: {course} starts at {start_time} in Room {room}. Future you says thanks 🙏
+CLASS_EARLY|f|🗺️ Advance notice: {course} at {start_time}. Room {room} — know the way? 🗺️
+CLASS_EARLY|s|🙄 Early reminder so you can't say "nobody told me". {course}, {start_time} 📢
+CLASS_EARLY|f|🧳 Pack your bag now: {course} starts {when} 🎒
+CLASS_EARLY|f|🔮 I foresee {course} in your near future ({start_time}, Room {room}) 🔮
+CLASS_EARLY|m|✅ You're ahead of schedule — {course} starts {when}. Keep that energy! ⚡
+CLASS_EARLY|f|🕰️ Save the date: today, {start_time}, {course}. Dress code: awake 😴❌
+CLASS_EARLY|f|🚌 Bus, bike or legs — choose your ride. {course} starts {when} 🚲
+CLASS_EARLY|s|⏳ Plenty of time now. Which means you'll still be late if you get comfy. {course}, {start_time}
+CLASS_EARLY|f|☀️ Morning planning: {course} at {start_time} with {instructor}. Room {room} ☀️
+
+# ---------------- Time of day (30) ----------------
+TOD_MORNING|f|🌅 Good morning, sunshine! {course} at {start_time} — first class energy only ☀️
+TOD_MORNING|s|☕ The coffee hasn't kicked in, but {course} has. Room {room}, {start_time} 😵
+TOD_MORNING|f|🐓 The rooster has spoken: {course} at {start_time} 🐓
+TOD_MORNING|m|🌄 Early classes build legendary discipline. {course}, Room {room} 💪
+TOD_MORNING|f|🥱 Yawn now, learn later. {course} at {start_time} in Room {room} 😴
+TOD_MORNING|s|🛏️ Your blanket is not a valid excuse. {course} starts {when} 🧣
+TOD_MORNING|f|🍞 Toast in hand, notes in bag, legs moving. {course} at {start_time} 🥪
+TOD_MORNING|f|🌞 Rise and shine — {course} doesn't do sleep-ins 🌞
+TOD_MORNING|m|✨ Win the morning, win the day. Step 1: {course} at {start_time} 🏆
+TOD_MORNING|f|☕ Chai first, {course} second, nap never (until evening). Room {room} 🍵
+TOD_MORNING|s|⏰ Fifth alarm today? This one's from me: {course} {when} 😑
+TOD_MORNING|f|🐦 The early bird gets the front bench. {course}, {start_time} 🪑
+TOD_AFTERNOON|f|😴 Post-lunch food coma detected. {course} at {start_time} needs you awake 🍛➡️📚
+TOD_AFTERNOON|s|🍚 Biryani was heavy, I know. {course} is heavier. Room {room} 😅
+TOD_AFTERNOON|f|🥤 Afternoon slump? Splash some water, then {course} at {start_time} 💦
+TOD_AFTERNOON|m|🔥 Second half of the day, same energy! {course} in Room {room} ⚡
+TOD_AFTERNOON|f|🌞 Sun's high, eyelids low. Fight it — {course} {when} 😵‍💫
+TOD_AFTERNOON|s|💤 Sleeping in the back bench is still technically attending. Barely. {course}, {start_time}
+TOD_AFTERNOON|f|🍦 Lunch done, dessert later. {course} first! Room {room} 🍨
+TOD_AFTERNOON|f|🔋 Recharge after lunch complete. Deploy to {course} at {start_time} 🔌
+TOD_AFTERNOON|m|💪 Afternoon classes are where the real ones show up. {course}, Room {room} 🏅
+TOD_AFTERNOON|f|🥱 Digestion mode: ON. Learning mode: please turn ON. {course} {when} 🧠
+TOD_LAST|f|🏁 Last class of the day! {course} and then freedom 🕊️
+TOD_LAST|m|🎉 Final boss of today: {course}. Beat it and the evening is yours 🎮
+TOD_LAST|f|🌇 One more class, then sunset vibes. {course} at {start_time} 🌇
+TOD_LAST|s|🙄 So close to freedom. Don't bunk the last one — {course}, Room {room} 🚪
+TOD_LAST|f|🛋️ The couch is calling, but {course} called first. Last class, {start_time} 📞
+TOD_LAST|m|💯 Finish strong! {course} is the last one today 🏆
+TOD_LAST|f|🎒 Last lap! {course} in Room {room}, then home 🏠
+TOD_LAST|f|🍿 Final episode of today's season: {course}. Don't skip the finale 🎬
+
+# ---------------- Day of week (20) ----------------
+DAY_MONDAY|f|😩 Monday called, it wants you in {course} at {start_time}. Sorry 📞
+DAY_MONDAY|s|🧟 Monday blues are not a medical condition. {course}, Room {room} 💙
+DAY_MONDAY|m|🚀 New week, fresh start! Begin it right with {course} at {start_time} 🌱
+DAY_MONDAY|f|☕ Monday + {course} = double coffee day ☕☕
+DAY_MONDAY|f|📅 Week 1 of the rest of your semester: {course} at {start_time} 📅
+DAY_MONDAY|s|😑 Yes, it's Monday. No, {course} doesn't care. Room {room}
+DAY_MONDAY|m|💪 Mondays are for setting the tone. Show up to {course} 🔥
+DAY_MONDAY|f|🐌 Moving at Monday speed? Speed up for {course} {when} 🏃
+DAY_MONDAY|f|🎬 The week's first episode: {course}. Don't miss the pilot 🎞️
+DAY_MONDAY|f|🌧️ Monday mood: cloudy. Forecast: {course} at {start_time} ⛅
+DAY_FRIDAY|f|🎉 It's Friday! One more push: {course} at {start_time}, then weekend 🥳
+DAY_FRIDAY|s|🙄 Weekend mode doesn't start until {course} ends. Room {room} ⏳
+DAY_FRIDAY|f|🍕 Friday feels + {course} = almost-weekend energy 🍕
+DAY_FRIDAY|m|🏁 Finish the week strong — {course} at {start_time} 🏁
+DAY_FRIDAY|f|🕺 Dance your way to Room {room}. It's Friday! {course} {when} 💃
+DAY_FRIDAY|s|📵 Weekend plans can wait 2 hours. {course} first 😤
+DAY_FRIDAY|f|🌴 Weekend loading… 85%. Remaining: {course} at {start_time} 🔄
+DAY_FRIDAY|f|🎮 Final level of the week: {course}. Boss fight at {start_time} 👾
+DAY_FRIDAY|m|✨ One last class this week. Make it count — {course}, Room {room} 🙌
+DAY_FRIDAY|f|🥳 TGIF! (Thank Goodness It's {course} … wait, no.) Room {room}, {start_time} 😅
+
+# ---------------- Course-specific (50) ----------------
+COURSE_ALGO|f|🧮 {course} at {start_time}: today's complexity is O(show up) 🏃
+COURSE_ALGO|f|🔁 while (not in Room {room}) { walk(); } — {course} {when} 💻
+COURSE_ALGO|s|📉 Your sleep schedule is O(n²). {course} at {start_time} might fix it 😴
+COURSE_ALGO|f|🌳 Time to traverse the tree to Room {room}. {course} in-order: you first 🌲
+COURSE_ALGO|f|⚡ Greedy choice: go to {course} now. Optimal? Absolutely ✅
+COURSE_ALGO|m|🧠 Every algorithm you understand today is a free interview answer later. {course} 💼
+COURSE_ALGO|f|🔍 Binary search for Room {room}: it's not the bed, it's the classroom 🛏️❌
+COURSE_ALGO|s|🙃 Dynamic programming tip: remember to attend {course}. Store that result 💾
+COURSE_ALGO|f|🧭 Shortest path to success: Dijkstra says Room {room} 🗺️
+COURSE_ALGO|f|♻️ Recursion: to attend {course}, first attend {course}. Base case: Room {room}, {start_time} 😵
+COURSE_AI|f|🤖 {course} starts {when}. Even neural networks need training — so do you 🧠
+COURSE_AI|f|🧠 Your neurons are underfitting. Train them in {course} at {start_time} 📈
+COURSE_AI|s|📉 Loss function too high? Attend {course} to bring it down 📉
+COURSE_AI|f|🦾 The robots are learning. Don't fall behind — {course}, Room {room} 🤖
+COURSE_AI|f|🎛️ Hyperparameter of the day: attendance = 1.0 ✅ {course} {when}
+COURSE_AI|m|✨ Today's {course} topic could power tomorrow's startup. Go learn it 🚀
+COURSE_AI|f|🧪 Gradient descent towards Room {room}… converging at {start_time} ⛰️
+COURSE_AI|s|🥴 Overfitting to your bed? Regularise it with {course} at {start_time} 🛏️
+COURSE_AI|f|👁️ Computer vision detected: you, not in class. Fix it — {course} {when} 📷
+COURSE_AI|f|🔮 Predicted probability you'll enjoy {course} today: 0.87 (trust the model) 📊
+COURSE_SE|f|📐 {course}: today's requirement — student shall attend class at {start_time} ✅
+COURSE_SE|f|🏗️ Architecture review: you → Room {room}. Status: pending 🚧
+COURSE_SE|s|🐛 Your attendance has a critical bug. Hotfix: {course} at {start_time} 🔥
+COURSE_SE|f|🔄 Agile sprint goal: reach Room {room} before {start_time}. Story points: 1 🏃
+COURSE_SE|f|📋 User story: "As a student, I want to attend {course} so I pass" ✔️
+COURSE_SE|m|🧱 Good systems are built one module at a time. Today's module: {course} 🧩
+COURSE_SE|f|🗂️ Version 2.0 of you attends {course}. Ship it! 🚢
+COURSE_SE|s|📉 Technical debt: skipped lectures. Pay it down — {course} {when} 💳
+COURSE_SE|f|🧪 Test case: student in Room {room} at {start_time}. Expected: PASS ✅
+COURSE_SE|f|📊 Stand-up meeting in {course} — literally stand up and walk to Room {room} 🧍
+COURSE_APTITUDE|f|🧮 If a student walks to Room {room} at 5 km/h… they still need to leave now. {course} {when} 🚶
+COURSE_APTITUDE|f|🔢 Probability of a surprise test in {course} today: not zero. Go 🎲
+COURSE_APTITUDE|s|📊 Time & Work: you + bed = 0 work. You + {course} = placement ready 💼
+COURSE_APTITUDE|f|🧩 Puzzle: find the student who's late to {course}. Hint: don't be the answer 🕵️
+COURSE_APTITUDE|m|💼 Aptitude today = placement offers tomorrow. {course} at {start_time} 🎯
+COURSE_APTITUDE|f|➗ Ratio of attended to missed {course} classes: let's keep it healthy ⚖️
+COURSE_APTITUDE|f|🚂 Two trains leave for Room {room}… just get on one. {course} {when} 🚆
+COURSE_APTITUDE|s|📈 Your percentile won't rise by itself. {course}, Room {room} 😤
+COURSE_APTITUDE|f|🧠 Logical reasoning: if class is at {start_time} and it's almost {start_time}… go 🏃
+COURSE_APTITUDE|f|🔣 Series completion: Mon ✅ Tue ✅ Today ❓ — fill it in at {course} 🔢
+COURSE_CRITICAL|f|🤔 Critical thinking exercise: should you go to {course}? (Correct answer: yes) ✅
+COURSE_CRITICAL|f|🗣️ Interpersonal skill of the day: saying "good morning" to {instructor} in Room {room} 👋
+COURSE_CRITICAL|m|💬 Communication skills open more doors than any degree. {course} at {start_time} 🚪
+COURSE_CRITICAL|s|🧐 Critically evaluate your excuse for skipping {course}. Verdict: weak 📉
+COURSE_CRITICAL|f|🤝 Teamwork makes the dream work. Team meeting: {course}, Room {room} 🫂
+COURSE_CRITICAL|f|🎤 Practice your best "interesting point" face. {course} {when} 🎙️
+COURSE_CRITICAL|m|🌟 Soft skills are the real superpower. Level them up in {course} 💪
+COURSE_CRITICAL|f|🧠 Think critically, arrive punctually. {course} at {start_time} ⏰
+COURSE_CRITICAL|s|🙊 Group discussion tip: you can't participate from your bed. {course}, Room {room}
+COURSE_CRITICAL|f|🪞 Reflect on this: {course} starts {when} 🤔
+
+# ---------------- Tenglish (class) ----------------
+CLASS_ANY|t|😴 Ra babu, nidra chalu! {course} {when} in Room {room} 🏃
+CLASS_ANY|t|🚨 {instructor} attendance teeskuntunnaru, twaraga ra! {course} 📋
+CLASS_ANY|t|☕ Chai taagi ready avvu mama, {course} at {start_time} ☕
+CLASS_ANY|t|🏃 Parigettu! {course} class {when} start avtundi 💨
+CLASS_ANY|t|📚 Enti inka bed lo unnava? {course} Room {room} lo wait chestondi 😤
+CLASS_ANY|t|😎 Hero entry ivvu, but time ki ivvu! {course} at {start_time} 🎬
+CLASS_ANY|t|🙏 Attendance poddi ra, please vellu. {course}, Room {room} 🥲
+CLASS_ANY|t|🤦 Malli late aa? {course} {when}, ippude bayaluderu 🚶
+CLASS_ANY|t|🍛 Lunch ayyindi kada, ika {course} ki vellu mama 😅
+CLASS_ANY|t|🔥 Mass entry kavali, class lo! {course} with {instructor} 🔥
+CLASS_ANY|t|📢 Baboi, {course} start aipotundi {when}! Room {room} 🏃‍♂️
+CLASS_ANY|t|🧠 Konchem chaduvu ra, exams vastunnayi. {course} at {start_time} 📖
+CLASS_ANY|t|🎒 Bag sardu, phone pakkana pettu, {course} ki vellu 📵
+CLASS_ANY|t|😂 Proxy vesthara ani aasha padaku. {course} ki nuvve vellu 🙃
+CLASS_ANY|t|⚡ Full josh tho vellu mama, {course} {when} 💪
+CLASS_ANY|t|🛏️ Dupati nunchi bayatiki ra! {course} Room {room} lo 🌅
+CLASS_ANY|t|🏁 Last class ra, inka konchem opika pattu! {course} 🙌
+CLASS_ANY|t|📅 Ee roju {course} miss ayithe, exam lo cry chestav 😭
+CLASS_ANY|t|🤩 Nuvvu topper material, class ki velthe! {course} at {start_time} ✨
+CLASS_ANY|t|👀 {instructor} gamanistaru, absent ayithe! {course} {when} 😬
+# ---------------- Hinglish (class) ----------------
+CLASS_ANY|h|😴 Utho bhai, neend baad mein! {course} {when} in Room {room} 🏃
+CLASS_ANY|h|🚨 {instructor} attendance le rahe hain, jaldi chal! {course} 📋
+CLASS_ANY|h|☕ Chai pi le aur nikal, {course} at {start_time} ☕
+CLASS_ANY|h|🏃 Bhaag! {course} {when} start ho raha hai 💨
+CLASS_ANY|h|📚 Abhi tak bed mein? {course} Room {room} mein wait kar raha hai 😤
+CLASS_ANY|h|😎 Entry hero wali, par time pe! {course} at {start_time} 🎬
+CLASS_ANY|h|🙏 Attendance kat jayegi yaar, chala ja. {course}, Room {room} 🥲
+CLASS_ANY|h|🤦 Phir se late? {course} {when}, abhi nikal 🚶
+CLASS_ANY|h|🍛 Lunch ho gaya na, ab {course} ki baari 😅
+CLASS_ANY|h|🔥 Class mein full josh chahiye! {course} with {instructor} 🔥
+CLASS_ANY|h|📢 Arre, {course} shuru hone wala hai {when}! Room {room} 🏃‍♂️
+CLASS_ANY|h|🧠 Thoda padh le bhai, exams aa rahe hain. {course} at {start_time} 📖
+CLASS_ANY|h|🎒 Bag utha, phone side mein rakh, {course} chal 📵
+CLASS_ANY|h|😂 Proxy ki ummeed mat rakh. {course} khud ja 🙃
+CLASS_ANY|h|⚡ Poore josh ke saath ja, {course} {when} 💪
+CLASS_ANY|h|🛏️ Kambal chhod, duniya dekh! {course} Room {room} mein 🌅
+CLASS_ANY|h|🏁 Last class hai, thoda aur! {course} 🙌
+CLASS_ANY|h|📅 Aaj {course} miss kiya toh exam mein rona padega 😭
+CLASS_ANY|h|🤩 Tu topper material hai, bas class ja! {course} at {start_time} ✨
+CLASS_ANY|h|👀 {instructor} notice karenge agar absent hua! {course} {when} 😬
+
+# ---------------- Exams: Semester (40) ----------------
+EXAM_SEM_FAR|m|🎓 {course} semester exam is {countdown} ({date}). Plenty of time — start light, stay steady 🌱
+EXAM_SEM_FAR|f|📅 Sem exam for {course} {countdown}. Future you is already thanking present you for starting 🙏
+EXAM_SEM_FAR|m|🧘 No panic, just planning: {course} sem exam on {date}. One topic a week = stress-free 📘
+EXAM_SEM_FAR|f|🐢 Slow and steady wins the sem. {course} exam {countdown} 🏁
+EXAM_SEM_FAR|s|😏 "I'll start next month" — you, every month. {course} sem exam {countdown} 📆
+EXAM_SEM_FAR|f|🌱 Plant the seed now, harvest marks later. {course} sem exam on {date} 🌾
+EXAM_SEM_FAR|m|📈 Just 20 minutes of {course} today keeps the panic away. Sem exam {countdown} ⏳
+EXAM_SEM_FAR|f|🎯 Weekly check-in: {course} sem exam is {countdown}. Revised anything yet? 😇
+EXAM_SEM_FAR|f|🗺️ Long road to {date}, but every map starts somewhere. {course} sem exam 🧭
+EXAM_SEM_FAR|m|💡 Make a 1-page summary for one {course} unit this week. Sem exam {countdown} 📝
+EXAM_SEM_FAR|s|🦥 The semester exam is far… just like your motivation. Fix one: {course}, {countdown}
+EXAM_SEM_FAR|f|🧃 Chill reminder: {course} sem exam {countdown}. Sip juice, read a chapter 📖
+EXAM_SEM_FAR|m|🏗️ Build your preparation brick by brick. {course} sem exam on {date} 🧱
+EXAM_SEM_FAR|f|🔭 Spotted far away: {course} sem exam ({date}). Approaching slowly… 🛸
+EXAM_SEM_NEAR|m|📆 {course} sem exam is {countdown}. Time to switch from "someday" to "today" 💪
+EXAM_SEM_NEAR|s|😬 {countdown} left for the {course} sem exam. The syllabus didn't shrink, sadly 📚
+EXAM_SEM_NEAR|f|⏰ Countdown active: {course} semester exam {countdown} ({date}) ⏳
+EXAM_SEM_NEAR|m|🔥 This is the sweet spot — enough time to revise everything once. {course}, {countdown} 🎯
+EXAM_SEM_NEAR|f|🗂️ Previous papers time! {course} sem exam {countdown} 📄
+EXAM_SEM_NEAR|s|📺 Netflix can wait. {course} sem exam can't. {countdown} 📺❌
+EXAM_SEM_NEAR|m|📝 Make a revision timetable for {course} today. Exam on {date} 🗓️
+EXAM_SEM_NEAR|f|🧠 Brain storage check: {course} at 40%? Upload more before {date} 💾
+EXAM_SEM_NEAR|f|🚦 Yellow light: {course} sem exam {countdown}. Slow down the fun, speed up the study 🟡
+EXAM_SEM_NEAR|m|🌟 You've still got {days}. Smart revision beats long revision. {course} 💡
+EXAM_SEM_NEAR|s|🙃 Remember when {date} felt far? Yeah. {course} sem exam {countdown}
+EXAM_SEM_NEAR|f|📚 Group study session idea: {course}, this week. Exam {countdown} 👥
+EXAM_SEM_NEAR|m|🏋️ Train like it's exam week, relax like it's not. {course}, {countdown} 💪
+EXAM_SEM_FINAL|s|😱 PANIC MODE (but productive): {course} sem exam {countdown}! 📚🔥
+EXAM_SEM_FINAL|m|🧘 Deep breath. {course} sem exam {countdown}. Revise formulas & important questions only 🎯
+EXAM_SEM_FINAL|f|⏳ Final week! {course} on {date} at {time}. Snacks + notes + sleep = win 🍫
+EXAM_SEM_FINAL|s|🚨 {course} exam {countdown}. Social media deleted? No? Hmm 📵
+EXAM_SEM_FINAL|m|📖 Revise, don't relearn. {course} sem exam {countdown} ✅
+EXAM_SEM_FINAL|f|🔥 Beast mode: ON. {course} semester exam {countdown} 🦁
+EXAM_SEM_FINAL|m|😴 Sleep is part of revision. Don't pull all-nighters before {course} ({date}) 🌙
+EXAM_SEM_FINAL|f|🎯 Important questions first, everything else later. {course} {countdown} 📌
+EXAM_SEM_FINAL|s|🫠 The night-before-exam version of you is begging you to study now. {course}, {countdown}
+EXAM_SEM_FINAL|m|💪 You've got this. {course} sem exam {countdown} — one topic at a time 🙌
+EXAM_SEM_FINAL|f|🧃 Hydrate, revise, repeat. {course} exam on {date} 💧
+EXAM_SEM_FINAL|f|📋 Hall ticket? Pens? Calculator? {course} sem exam {countdown} 🖊️
+EXAM_SEM_FINAL|m|✨ Trust your preparation. {course} on {date}, Room {room} 🍀
+
+# ---------------- Exams: Mid (30) ----------------
+EXAM_MID|m|📝 {course} mid exam {countdown} ({date}). Start with the units you like least 💪
+EXAM_MID|f|🧭 Mid exam radar: {course} detected {countdown} 📡
+EXAM_MID|s|😏 Mid exams: where "I'll study later" meets "later is now". {course}, {countdown}
+EXAM_MID|f|📚 Weekly reminder: {course} mid exam on {date}. Unit 1 won't revise itself 📖
+EXAM_MID|m|🎯 Mid marks matter! {course} {countdown} — let's score big 🏆
+EXAM_MID|f|⏳ Tick tock, mid exam o'clock in {days}: {course} ⏰
+EXAM_MID|s|🙃 "It's just a mid" — famous last words before a backlog. {course}, {countdown}
+EXAM_MID|m|🧠 Make short notes for {course} today. Mid exam on {date} 📝
+EXAM_MID|f|🍫 Study 25 min, chocolate 5 min. Repeat for {course} (mid {countdown}) 🍫
+EXAM_MID|s|📉 Internal marks are free marks. Don't donate them. {course} mid {countdown} 💸
+EXAM_MID|m|🌟 Mid exams are practice for finals. Show up prepared for {course} ({date}) 🎓
+EXAM_MID|f|🗓️ Mark your calendar (I already did): {course} mid exam {date} {emoji}
+EXAM_MID|f|🔍 Previous mid papers = cheat code (legal). {course} {countdown} 🎮
+EXAM_MID|s|😬 {days} left and you're reading notifications? {course} mid exam!
+EXAM_MID|m|💪 Consistency > intensity. A little {course} every day till {date} 📈
+EXAM_MID|f|🧩 Pick one {course} topic tonight. Just one. Mid exam {countdown} 🧩
+EXAM_MID|f|📣 Announcement: {course} mid exam {countdown}. This has been your friendly app 📢
+EXAM_MID|m|🙌 You're more prepared than you think. Keep going — {course}, {countdown} ✨
+EXAM_MID|s|🦥 Your textbook is still in the plastic cover, isn't it? {course} mid {countdown}
+EXAM_MID|f|🎧 Lo-fi beats + {course} notes = mid exam vibes. {countdown} 🎶
+EXAM_MID|m|📖 Revise yesterday's class today. Future mid ({date}) says thanks 🙏
+EXAM_MID|f|🏃 Mid exam marathon starts now: {course} {countdown} 🏃‍♀️
+EXAM_MID|s|🔥 Tomorrow-you is tired of your excuses. {course} mid {countdown}
+EXAM_MID|f|🛎️ Ring ring! It's your {course} mid exam calling — {countdown} 📞
+EXAM_MID|m|🧘 Calm mind, clear notes. {course} mid exam on {date} at {time} 🌿
+EXAM_MID|f|🎲 Guess what's {countdown}? Yep — {course} mid exam 🎲
+EXAM_MID|f|🍀 Luck favours the prepared. {course} mid {countdown} 🍀
+EXAM_MID|m|✅ Tick off one chapter of {course} today. Mid on {date} ✔️
+EXAM_MID|s|🧟 Don't become a pre-exam zombie. Study {course} now — {countdown}
+EXAM_MID|f|📌 Pinned: {course} mid exam {countdown}, Room {room} 📍
+
+# ---------------- Exams: Lab / Slip / Quiz / Assignment ----------------
+EXAM_LAB|m|🔬 {course} lab exam {countdown}. Practise each experiment once — hands remember 🖐️
+EXAM_LAB|f|📓 Lab record complete? Signed? {course} lab exam {countdown} ✍️
+EXAM_LAB|s|🙃 The examiner will pick the ONE program you didn't practise. {course} lab exam {countdown}
+EXAM_LAB|f|🎤 Viva questions incoming! Revise basics for {course} lab exam ({date}) 🎙️
+EXAM_LAB|m|💻 Type the programs yourself, don't just read them. {course} lab exam {countdown} ⌨️
+EXAM_LAB|f|🧪 Experiment checklist time: {course} lab exam on {date} at {time} ✅
+EXAM_LAB|s|🐞 "Output not coming" is not an answer in the {course} lab exam. Practise! {countdown}
+EXAM_LAB|f|🔁 Run every program once tonight. {course} lab exam {countdown} 🔁
+EXAM_LAB|m|🧘 Calm hands, clear logic. {course} lab exam on {date}, Room {room} 🍀
+EXAM_LAB|f|📋 Algorithm, code, output, result — the holy four. {course} lab exam {countdown} 📜
+EXAM_LAB|s|👀 The external examiner doesn't know you're "usually good". {course} lab {countdown}
+EXAM_LAB|f|⚗️ Formula of success: practice + record + sleep. {course} lab exam {countdown} 🧪
+EXAM_LAB|m|🎯 Know the aim and principle of every experiment. {course} lab exam {countdown} 🎯
+EXAM_LAB|f|🛠️ Tools sharpened? {course} lab exam is {countdown} 🛠️
+EXAM_LAB|s|📵 Lab exam rule #1: no Stack Overflow. {course}, {countdown} 😅
+EXAM_LAB|f|🤖 Systems are ready for the {course} lab exam. Are you? ({date}) 🤖
+EXAM_LAB|m|💡 Explain one program aloud to a friend — best viva prep. {course} {countdown} 🗣️
+EXAM_LAB|f|🔋 Charge laptop, charge brain. {course} lab exam {countdown} ⚡
+EXAM_LAB|f|📦 Pack: record, pen, ID, confidence. {course} lab exam on {date} 🎒
+EXAM_LAB|m|🍀 You've done these labs all semester. You've got this! {course} {countdown} 💪
+EXAM_SLIP|f|✍️ Slip test alert: {course} {countdown}! Quick revision of last class 📖
+EXAM_SLIP|s|😏 It's "just" a slip test… until it isn't. {course} {countdown} 📝
+EXAM_SLIP|m|📚 20 minutes tonight = full marks tomorrow. {course} slip test {countdown} ✅
+EXAM_SLIP|f|⚡ Lightning revision: {course} slip test {countdown}. Key points only! ⚡
+EXAM_SLIP|f|🧠 Re-read today's notes once. {course} slip test {countdown} 🗒️
+EXAM_SLIP|s|🙃 Surprise! It's not a surprise test. You know it's {countdown}. {course}
+EXAM_SLIP|m|🎯 Small test, big habit. Prepare for {course} ({countdown}) 🎯
+EXAM_SLIP|f|📝 Slip test tomorrow-ish: {course}. Pen + memory = ready 🖊️
+EXAM_SLIP|f|🌙 Evening check: {course} slip test {countdown}. Revise before Netflix 📺
+EXAM_SLIP|s|😬 Slip test marks add up. Don't let {course} slip ({countdown}) 🫠
+EXAM_SLIP|m|☀️ Morning review: 10 minutes of {course} before the slip test {countdown} ☕
+EXAM_SLIP|f|🔁 Formulas on a sticky note — {course} slip test {countdown} 📌
+EXAM_SLIP|f|🎒 Pen packed? Brain packed? {course} slip test {countdown} 🎒
+EXAM_SLIP|s|📵 One reel less, one formula more. {course} slip test {countdown}
+EXAM_SLIP|m|✨ Quick win available: {course} slip test {countdown}. Go grab those marks 🏆
+EXAM_SLIP|f|🧩 Last class's topic is probably the test. {course} {countdown} 🔎
+EXAM_SLIP|f|📣 Psst… {course} slip test {countdown}. You didn't hear it from me 🤫
+EXAM_SLIP|s|🫵 Yes, you need to revise for a slip test too. {course}, {countdown}
+EXAM_SLIP|m|🌟 Ace the small ones, confidence for the big ones. {course} slip test {countdown} 💪
+EXAM_SLIP|f|⏰ Tiny test, tiny prep, big satisfaction. {course} {countdown} 😌
+EXAM_QUIZ|f|❓ Quiz time {countdown}: {course}! Quick-fire revision 🔥
+EXAM_QUIZ|m|🎤 Viva/quiz prep: explain {course} basics in your own words. {countdown} 🗣️
+EXAM_QUIZ|s|🙃 "I knew it but forgot" doesn't score. Revise {course} — {countdown}
+EXAM_QUIZ|f|🧠 Flashcards night! {course} quiz/viva {countdown} 🃏
+EXAM_QUIZ|f|🎯 Definitions + diagrams = quiz gold. {course} {countdown} 🏅
+EXAM_QUIZ|m|😌 Speak slowly, think clearly. {course} viva/quiz {countdown} 🌿
+EXAM_QUIZ|f|📣 Pop quiz? Not pop if you know about it. {course} {countdown} 🎈
+EXAM_QUIZ|s|🫣 The examiner will ask "why". Know the why. {course} {countdown}
+EXAM_QUIZ|f|🔁 Rapid revision round: {course} {countdown} ⏱️
+EXAM_QUIZ|m|💡 Teach a friend one {course} topic — best viva prep. {countdown} 👥
+EXAM_QUIZ|f|🎲 Random questions incoming in {course}. Be ready {countdown} 🎲
+EXAM_QUIZ|f|📝 Mini test, maxi confidence. {course} {countdown} ✨
+EXAM_QUIZ|s|😬 Blanking out in a viva is a vibe nobody wants. Revise {course} — {countdown}
+EXAM_QUIZ|m|🍀 You know more than you think. {course} quiz/viva {countdown} 🙌
+EXAM_QUIZ|f|📚 Key terms list for {course}, tonight. {countdown} 📌
+EXAM_ASSIGN|f|📤 Deadline radar: {course} submission {countdown} ({date}, {time}) 📡
+EXAM_ASSIGN|s|😏 The assignment won't write itself. {course} due {countdown} ✍️
+EXAM_ASSIGN|m|🧱 Start with the intro today, finish the rest tomorrow. {course} due {countdown} 📝
+EXAM_ASSIGN|f|⏰ Submission alarm: {course} {countdown} 🔔
+EXAM_ASSIGN|s|🫠 3 AM submissions build character… and regret. {course} due {countdown}
+EXAM_ASSIGN|m|✅ Done is better than perfect. Submit {course} before {time} on {date} 📤
+EXAM_ASSIGN|f|📎 Files attached? Name correct? {course} submission {countdown} 📎
+EXAM_ASSIGN|f|🚀 Ship it! {course} assignment due {countdown} 🚢
+EXAM_ASSIGN|s|🙃 "Sir, can I submit tomorrow?" — don't be that person. {course}, {countdown}
+EXAM_ASSIGN|m|🌟 Finishing early = stress-free weekend. {course} due {countdown} 😌
+EXAM_ASSIGN|f|📋 Checklist: content ✅ formatting ✅ references ✅ — {course} due {countdown}
+EXAM_ASSIGN|s|⏳ The deadline is approaching faster than your typing speed. {course} {countdown}
+EXAM_ASSIGN|f|🖨️ Printouts needed? Print shops get crowded. {course} due {countdown} 🖨️
+EXAM_ASSIGN|m|💪 One focused hour today finishes most of {course}. Due {countdown} ⏱️
+EXAM_ASSIGN|f|🎉 Submit {course} and celebrate! Deadline {countdown} 🎊
+EXAM_DAY|m|🍀 Exam day! {course} {exam} at {time} in Room {room}. You've prepared — go shine ✨
+EXAM_DAY|m|🙏 All the best for {course} today! Read every question twice ✍️
+EXAM_DAY|f|🎒 Hall ticket ✅ Pens ✅ Water ✅ Confidence ✅ — {course} at {time} 🍀
+EXAM_DAY|m|😌 Deep breath. You know this. {course} {exam} at {time} 💪
+EXAM_DAY|f|🏆 Today's mission: {course}. Weapon: your preparation. Go win! 🗡️
+EXAM_DAY|m|🌟 Attempt every question, manage time, stay calm. {course} at {time} 🕒
+EXAM_DAY|f|🚀 Launch day for {course}! Room {room}, {time}. Make us proud 🎓
+EXAM_DAY|m|💙 Whatever happens, you showed up and tried. All the best for {course}! 🍀
+EXAM_DAY|f|⏰ Leave early — no exam-day running today. {course} at {time} 🚶
+EXAM_DAY|m|✨ Fresh mind, steady hand. {course} {exam} today. You've got this! 🙌
+EXAM_ANY|t|📚 Ra babu, {course} {exam} {countdown}! Konchem chaduvu 🙏
+EXAM_ANY|t|😱 Exam vastundi mama — {course} {countdown}. Phone pakkana pettu 📵
+EXAM_ANY|t|💪 Nuvvu cheyagalav ra! {course} {exam} {countdown} 🔥
+EXAM_ANY|t|🧠 Ee roju oka unit chaduvu chalu. {course} {countdown} 📖
+EXAM_ANY|t|🍀 All the best ra! {course} {exam} on {date} 🙌
+EXAM_ANY|t|😂 Night-out chesi chaduvutha ani anukoku. {course} {countdown} 🌙
+EXAM_ANY|t|🎯 Important questions first chudu mama. {course} {countdown} 🎯
+EXAM_ANY|t|🔥 Topper avvali ante ippudu start cheyyi! {course} {countdown} 🏆
+EXAM_ANY|h|📚 Bhai, {course} {exam} {countdown}! Thoda padh le 🙏
+EXAM_ANY|h|😱 Exam aa raha hai — {course} {countdown}. Phone side mein rakh 📵
+EXAM_ANY|h|💪 Tu kar lega yaar! {course} {exam} {countdown} 🔥
+EXAM_ANY|h|🧠 Aaj ek unit kaafi hai. {course} {countdown} 📖
+EXAM_ANY|h|🍀 All the best bhai! {course} {exam} on {date} 🙌
+EXAM_ANY|h|😂 Raat bhar padhne ka plan mat bana. {course} {countdown} 🌙
+EXAM_ANY|h|🎯 Pehle important questions dekh. {course} {countdown} 🎯
+EXAM_ANY|h|🔥 Topper banna hai toh abhi shuru kar! {course} {countdown} 🏆
+
+# ---------------- Weekend prep (35) ----------------
+WEEKEND_OVERVIEW|m|📚 Weekend = prep time! You have {count} exam(s) next week. Here's the plan 👇
+WEEKEND_OVERVIEW|f|🗓️ Weekend briefing, agent: {count} exam(s) incoming next week. Mission details below 🕵️
+WEEKEND_OVERVIEW|s|😏 Weekend plans? Cute. {count} exam(s) next week says otherwise 👇
+WEEKEND_OVERVIEW|f|☀️ Happy weekend! Quick heads-up: {count} exam(s) coming next week 📋
+WEEKEND_OVERVIEW|m|🧘 Calm weekend, smart prep: {count} exam(s) next week. Split them like this 👇
+WEEKEND_OVERVIEW|f|📦 Your weekly exam delivery: {count} item(s). Unbox below 🎁
+WEEKEND_OVERVIEW|s|📺 Netflix can wait, {first_exam} can't. {count} exam(s) next week 📺❌
+WEEKEND_OVERVIEW|f|🎮 Weekend side quest unlocked: prepare for {count} exam(s) 🗺️
+WEEKEND_OVERVIEW|m|🌱 Two relaxed study sessions this weekend = a calm next week. {count} exam(s) 👇
+WEEKEND_OVERVIEW|f|🧭 First stop next week: {first_exam} on {first_day}. Full route below 🗺️
+WEEKEND_PROGRESS|f|🌇 Saturday evening check-in: how's the prep going? Next week: {count} exam(s) 📈
+WEEKEND_PROGRESS|m|✅ Even one chapter today counts. {count} exam(s) next week — keep going 💪
+WEEKEND_PROGRESS|s|🙃 Saturday night plans: revise first, party later. {first_exam} is coming
+WEEKEND_PROGRESS|f|🍕 Pizza break earned? Only if you studied! {count} exam(s) next week 🍕
+WEEKEND_PROGRESS|m|🌙 Quick 30-minute revision before bed. {first_exam} on {first_day} 🛏️
+WEEKEND_PROGRESS|f|📊 Progress bar for the weekend: you decide how full it gets 📶
+WEEKEND_PROGRESS|s|😬 Half the weekend gone. Half the syllabus? Hmm. {count} exam(s) next week
+WEEKEND_FOCUS|m|☀️ Sunday focus: finish what's left. {count} exam(s) next week 🎯
+WEEKEND_FOCUS|f|🧃 Sunday = juice + revision + nap (in that order). {first_exam} on {first_day} 🧃
+WEEKEND_FOCUS|s|🫠 It's Sunday. The exams didn't take the weekend off. {count} coming up
+WEEKEND_FOCUS|f|📚 Sunday special: one topic per exam. You've got {count} 📌
+WEEKEND_FOCUS|m|💪 Last full day before the week — let's make it count! {first_exam} first 🏁
+WEEKEND_FOCUS|f|🎧 Lo-fi Sunday study session time. {count} exam(s) next week 🎶
+WEEKEND_FOCUS|s|🛋️ Sofa or syllabus? Choose wisely. {first_exam} on {first_day}
+WEEKEND_FINAL|m|🌙 Final check: tomorrow the week starts. First up: {first_exam} on {first_day} ✍️
+WEEKEND_FINAL|f|🎒 Pack your bag for Monday, and your brain for {first_exam} 🧠
+WEEKEND_FINAL|s|⏰ Weekend over. Exams loading… {first_exam} on {first_day} 🔄
+WEEKEND_FINAL|f|📋 Tomorrow's game plan: attend classes, revise for {first_exam} 🗂️
+WEEKEND_FINAL|m|😴 Sleep early tonight — next week has {count} exam(s). You'll do great 🍀
+WEEKEND_FINAL|f|🚀 Week launch sequence initiated. Exam #1: {first_exam} ({first_day}) 🚀
+WEEKEND_FREE|f|😎 No exams next week! Enjoy your weekend guilt-free 🎉
+WEEKEND_FREE|m|🌴 Exam-free week ahead. Rest well, maybe revise one class for fun 📖
+WEEKEND_FREE|f|🎉 Zero exams next week. This is your sign to touch grass 🌿
+WEEKEND_FREE|f|🛌 No exams coming up — sleep in, you've earned it 😴
+WEEKEND_FREE|s|😏 No exams next week. Don't get too comfortable though 👀
+WEEKEND_ANY|t|📚 Weekend lo konchem chaduvu ra! Next week {count} exam(s) 🙏
+WEEKEND_ANY|t|😂 Weekend antha cinema chusi, Monday cry cheyaku. {first_exam} vastundi 🎬
+WEEKEND_ANY|t|💪 Rendu gantalu chaduvu chalu mama. {count} exam(s) next week 📖
+WEEKEND_ANY|t|☀️ Sunday ayina sare, {first_exam} gurtu pettuko ra 🧠
+WEEKEND_ANY|h|📚 Weekend pe thoda padh le bhai! Agle hafte {count} exam(s) 🙏
+WEEKEND_ANY|h|😂 Weekend bhar series dekhi toh Monday ko rona padega. {first_exam} aa raha hai 🎬
+WEEKEND_ANY|h|💪 Do ghante padh le, kaafi hai. {count} exam(s) next week 📖
+WEEKEND_ANY|h|☀️ Sunday hai toh kya, {first_exam} yaad rakh 🧠
+
+# ---------------- Morning summary (15) ----------------
+MORNING_SUMMARY|f|☀️ Good morning! Today: {count} class(es), first is {first_course} at {first_time} 📋
+MORNING_SUMMARY|m|🌅 Rise and shine! {count} class(es) today. Let's have a great day 💪
+MORNING_SUMMARY|f|☕ Morning briefing: {count} class(es) lined up. Kick-off: {first_course}, {first_time} 🗂️
+MORNING_SUMMARY|s|🥱 Up already? Good. {count} class(es) today, starting {first_time} ⏰
+MORNING_SUMMARY|f|📰 Today's headlines: {first_course} at {first_time} and {count} class(es) total 🗞️
+MORNING_SUMMARY|m|✨ New day, fresh start. {count} class(es) — you've got this 🙌
+MORNING_SUMMARY|f|🗺️ Today's route: {count} stop(s), first at {first_time} ({first_course}) 🚏
+MORNING_SUMMARY|f|🎒 Pack for {count} class(es) today. First: {first_course} 🎒
+MORNING_SUMMARY|s|📢 Attendance check incoming {count} time(s) today. Be there 👀
+MORNING_SUMMARY|m|🌤️ Good morning! Plan your day around {count} class(es). First at {first_time} 🌤️
+MORNING_SUMMARY|f|🍳 Breakfast + plan: {count} class(es), first is {first_course} 🍳
+MORNING_SUMMARY|f|🎬 Today's episodes: {count}. Season premiere at {first_time} 🍿
+MORNING_SUMMARY|m|💪 Show up for all {count} today and future-you will be proud 🏆
+MORNING_SUMMARY|f|🐓 Cock-a-doodle-doo! {count} class(es) today. First: {first_time} 🐓
+MORNING_SUMMARY|f|📅 Your day at a glance 👇
+MORNING_FREE|f|🎉 No classes today! Rest, revise, or touch grass 🌿
+MORNING_FREE|m|🌴 Free day! Maybe 30 minutes of revision, then enjoy 😌
+MORNING_FREE|f|🛋️ Zero classes today. The couch salutes you 🫡
+
+# ---------------- Class end / next block (15) ----------------
+CLASS_END|f|🏁 {course} wraps up in 5. Next: {next_course} at {next_time}, Room {next_room} ➡️
+CLASS_END|f|⏭️ Almost done with {course}! Up next: {next_course} ({next_time}) 📚
+CLASS_END|m|✅ Nice, {course} nearly done. {next_course} next at {next_time} 💪
+CLASS_END|f|🧳 Pack up slowly… {next_course} is next at {next_time} in Room {next_room} 🎒
+CLASS_END|s|😏 Don't escape too fast — {next_course} starts at {next_time} 🏃
+CLASS_END|f|🔄 Switching subjects: {course} ➡️ {next_course} ({next_time}) 🔁
+CLASS_END_LAST|f|🎉 Last 5 minutes of {course}! No more classes after this — you're free 🕊️
+CLASS_END_LAST|m|🌟 Wrapping up {course} — and that's the last class today. Well done! 🏆
+NEXT_BLOCK|f|🏃 {course} ends in 5 — next is {next_course} in Room {next_room} (another block!). Start walking 🚶
+NEXT_BLOCK|s|🗺️ Plot twist: {next_course} is in a different block ({next_room}). Leave on time! 🏃‍♂️
+NEXT_BLOCK|f|🧭 Navigation alert: {next_room} for {next_course} at {next_time}. Different building, more steps 👟
+NEXT_BLOCK|f|🚶‍♀️ Cross-campus cardio time! {next_course} in {next_room} at {next_time} 💪
+NEXT_BLOCK|s|⏰ Another block = no time for chai. {next_course} at {next_time}, {next_room} ☕❌
+NEXT_BLOCK|f|🛰️ Teleport not available. Walk to {next_room} for {next_course} ({next_time}) 🚶
+NEXT_BLOCK|m|💨 Quick transition! {next_course} is in {next_room} — leave a bit early 🏃
+
+CLASS_END_LAST|f|🏠 {course} is wrapping up — that's a wrap for today! Home time 🏠
+CLASS_END_LAST|s|😏 Last class ending. Don't forget to mark your attendance before you vanish 👻
+CLASS_END_LAST|f|🛋️ {course} ends in 5 and so does your college day. Couch, here we come 🛋️
+
+# ---------------- Attendance (20) ----------------
+ATTEND_LOW|s|📉 Your {course} attendance is {pct}%. That's below 75%. Showing up today is not optional 😬
+ATTEND_LOW|s|🚨 {course} attendance: {pct}%. The detention-list is warming up a seat for you 🪑
+ATTEND_LOW|m|💪 {course} attendance is {pct}% — every class from now pulls it back up. Go! 📈
+ATTEND_LOW|f|🧮 Math check: {pct}% in {course}. Target: 75%. Solution: attend today 🧮
+ATTEND_LOW|s|😬 {pct}% attendance in {course}. Your parents would like a word 📞
+ATTEND_LOW|m|🌱 Comeback season starts now. {course} at {pct}% → let's climb 📈
+ATTEND_LOW|f|🎯 {course} attendance {pct}%. Today's class = +1 to the comeback counter 🔢
+ATTEND_LOW|s|📋 {pct}% in {course}. Condonation forms are NOT a vibe. Go to class 🙃
+ATTEND_LOW|m|🙌 Low attendance in {course} ({pct}%) is fixable. Today's the first step 👣
+ATTEND_LOW|f|🚑 Attendance emergency in {course}: {pct}%. Prescription: attend today 💊
+ATTEND_LOW|s|🫠 {course} sits at {pct}%. Bunking today would be… bold 😶
+ATTEND_LOW|m|🔥 You can still save {course} ({pct}%). Show up, every time 💯
+ATTEND_STREAK|f|🔥 {streak}-day attendance streak! Keep it alive with {course} 🔥
+ATTEND_STREAK|m|🏆 {streak} days without missing a class. Legendary! {course} next 👑
+ATTEND_STREAK|f|📈 Streak: {streak} days. Don't break the chain — {course} {when} ⛓️
+ATTEND_STREAK|m|✨ {streak}-day streak! Future you is sending thank-you notes 💌
+ATTEND_STREAK|f|🎮 Combo x{streak}! Keep the streak going at {course} 🕹️
+ATTEND_STREAK|s|😎 {streak} days straight. Who even are you? Keep going — {course}
+ATTEND_STREAK|m|💯 {streak}-day streak. Discipline looks good on you. {course} next 🙌
+ATTEND_STREAK|f|🥇 Gold medal in showing up: {streak} days. {course} awaits 🏅
+
+# ---------------- Festivals (15) ----------------
+FESTIVAL_DIWALI|f|🪔 Happy Diwali! Light up your notes as bright as the diyas ✨
+FESTIVAL_DIWALI|m|🪔 Wishing you a bright, safe Diwali. May your marks sparkle like the lights 🎆
+FESTIVAL_DIWALI|f|🎆 Crackers outside, class reminders inside. Happy Diwali! 🪔
+FESTIVAL_SANKRANTI|f|🪁 Happy Sankranti! Fly kites high, fly grades higher 🪁
+FESTIVAL_SANKRANTI|m|🌾 Happy Sankranti! A harvest of happiness (and good marks) to you 🌾
+FESTIVAL_SANKRANTI|f|🍬 Pongal sweets + rest = perfect festival. Happy Sankranti! 🎉
+FESTIVAL_HOLI|f|🎨 Happy Holi! Colours on your face, colours in your notes 🌈
+FESTIVAL_HOLI|m|🌈 Happy Holi! Celebrate safely and enjoy the break 💜
+FESTIVAL_HOLI|f|💦 Holi hai! Keep your phone (and notes) away from the water balloons 🎈
+FESTIVAL_CHRISTMAS|f|🎄 Merry Christmas! Santa checked his list — you attended your classes ✅
+FESTIVAL_CHRISTMAS|m|🎁 Merry Christmas! Rest well and recharge for the new year ✨
+FESTIVAL_CHRISTMAS|f|🎅 Ho ho ho! Even Santa takes breaks. Enjoy yours 🎄
+FESTIVAL_NEWYEAR|m|🎉 Happy New Year! New year, new semester energy 🚀
+FESTIVAL_NEWYEAR|f|🥳 Happy New Year! Resolution idea: 100% attendance (we believe in you) 📈
+FESTIVAL_NEWYEAR|f|🎆 Happy New Year! May your bugs be few and your marks be many 🐞➡️🏆

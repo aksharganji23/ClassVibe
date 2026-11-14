@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">ClassVibe</string>
+    <string name="widget_name">ClassVibe – Now &amp; Next</string>
+    <string name="widget_description">Your current and next class, plus the nearest exam</string>
+</resources>

@@ -1,0 +1,10 @@
+<resources>
+    <color name="cv_brand">#FF0055A4</color>
+    <color name="cv_accent">#FFE07800</color>
+    <color name="cv_window_bg">#FFFFFFFF</color>
+    <color name="cv_launcher_bg">#FF0055A4</color>
+    <color name="cv_widget_bg">#FFFFFFFF</color>
+    <color name="cv_widget_stroke">#FFE1E6EE</color>
+    <color name="cv_widget_text">#FF1A1C21</color>
+    <color name="cv_widget_subtext">#FF5F6670</color>
+</resources>

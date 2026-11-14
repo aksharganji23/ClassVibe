@@ -1,0 +1,39 @@
+# Compiles the app on every push / pull request so build errors show up on GitHub.
+# Open the "Actions" tab → this run → "Build debug APK" to see any errors.
+name: Build
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Build debug APK
+        run: gradle assembleDebug --stacktrace
+
+      - name: Lint (report only)
+        run: gradle lintDebug
+        continue-on-error: true
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ClassVibe-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          retention-days: 14
