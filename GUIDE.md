@@ -155,20 +155,26 @@ Share the same Releases link with classmates. From now on they never need to dow
 
 | When | What happens |
 |---|---|
-| App opens | Checks GitHub (at most once per 10 min) |
+| App opens | Checks for updates (at most once per 10 min) |
 | Every ~8 hours (3× a day) | Background check, only on a network, and only if "Check for updates" is on |
 | Settings → "Check for updates now" | Manual check |
 
+**Where the app looks (in this order):**
+1. `version.json` on your website, written automatically after every release. No hourly limit, so it works on college Wi‑Fi.
+2. The `github.com/…/releases/latest` link (stable versions).
+3. The GitHub API (limited to 60 checks per hour per network; a 403 shows "Too many update checks from this network – try mobile data").
+
 **When a newer release exists:**
 1. A **"🚀 Update available"** card appears on Today, plus a notification.
-2. The user taps **Update**, and Android's DownloadManager downloads the APK.
-3. ClassVibe **verifies the SHA-256 checksum** and that the APK is **signed with your key**. If either fails, the file is deleted and the user is warned.
-4. The user gets **"✅ verified – tap to install"**, taps it and taps the ClassVibe file. Android installs it as an update, and all data is kept.
+2. The user taps **Update**. The very first time, Android asks to allow **Install unknown apps** for ClassVibe (switch it on, come back, the update starts by itself).
+3. The card shows download progress. ClassVibe **verifies the SHA-256 checksum** and that the APK is **signed with your key**; if either fails, the file is deleted and the user is warned.
+4. Android's **"Update this app?"** box appears → tap **Update**. On Android 12+ later updates usually install with **no tap at all**.
+5. Android restarts the app; a **"✅ ClassVibe updated – tap to open"** notification appears. All data is kept.
+6. A copy of the APK is kept in **Downloads/ClassVibe/** (e.g. `ClassVibe-v1.3.0.apk`) in case you need to install it by hand.
 
 **Also:**
 - **Later** hides the card for now; **Skip version** ignores that version.
-- With no internet, the check fails silently and retries later.
-- **Why there's one tap:** ClassVibe deliberately does **not** request the "install unknown apps" permission (Play Protect treats it as risky). Fully silent updates are only possible through Google Play.
+- Android never lets an app reopen itself after an update from the background, hence the "tap to open" notification.
 
 ---
 
@@ -211,7 +217,7 @@ Share the same Releases link with classmates. From now on they never need to dow
 
 **What ClassVibe already does to pass scans:**
 - **Minimal permissions:** notifications, alarms, boot, wake lock, vibrate, and network for updates only.
-- **No high-risk permissions:** no SMS, contacts, location, camera, storage, accessibility, overlay or install-packages permission.
+- **Few permissions:** no SMS, contacts, location, camera, storage, accessibility or overlay permission. The only special one is **Install unknown apps**, used only to install ClassVibe's own verified updates. Play Protect may mention it on first install; that's expected for apps that update themselves.
 - **No ads, analytics or tracking SDKs;** no cleartext HTTP; immutable PendingIntents; non-exported internal receivers.
 - **Release builds** are minified, not debuggable, signed with your key and verified on update.
 
@@ -296,9 +302,9 @@ The `site/` folder is a small download page. The workflow `.github/workflows/pag
 
 **Links that never change:**
 - Website: `https://aksharganji23.github.io/ClassVibe/`
-- Latest APK (direct download): `https://github.com/aksharganji23/ClassVibe/releases/latest/download/ClassVibe.apk`
+- Latest version: share the **website** link above. Its Download button always gives the newest file, named with its version (e.g. `ClassVibe-v1.3.0.apk`).
 
-The page reads the latest version number and size from GitHub automatically, so you do **not** need to edit it for each release.
+After every release, the Release workflow restarts **Deploy website**, which writes `version.json` (latest version, APK link, checksum). The page and the app both read it, so you never edit the site for a release. If the website run ever fails, run **Actions → Deploy website → Run workflow** by hand.
 
 ## Part N: Sharing with QR codes
 

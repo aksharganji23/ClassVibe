@@ -3,6 +3,19 @@
 All notable changes to ClassVibe. Versions follow `MAJOR.MINOR.PATCH`.
 The release workflow copies the section for each tag into the GitHub Release notes.
 
+## [1.3.0] – Smooth Operator 🛼
+
+### Added
+- **One-tap updates** – tap Update, watch the progress, tap Update once in Android's box (Android 12+: often no tap at all); a "✅ Updated – tap to open" notification follows. Needs "Install unknown apps" (asked once).
+- A copy of every downloaded update is kept in **Downloads/ClassVibe/**.
+
+### Changed
+- **Update checks work on busy Wi-Fi** – the app reads `version.json` from the website first, then the `releases/latest` page, then the GitHub API. Clear messages instead of "GitHub answered 403".
+- **Every APK has its version in the name** (`ClassVibe-v1.3.0.apk`) – website, GitHub Releases and in-app downloads. The plain `ClassVibe.apk` is gone.
+- **New app icon** – the original calendar ⚡ logo in ClassVibe blue (#0055A4).
+- Website shows the new logo, reads `version.json`, and its QR code opens the website.
+- Shorter README.
+
 ## [1.2.0] – Sharp Eye 🔍
 
 ### Added

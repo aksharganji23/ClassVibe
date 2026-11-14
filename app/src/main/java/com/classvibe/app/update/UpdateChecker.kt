@@ -29,11 +29,13 @@ data class UpdateInfo(
     val apkName: String,
     val shaUrl: String?,
     val pageUrl: String,
-    val prerelease: Boolean
+    val prerelease: Boolean,
+    /** Checksum published in version.json (if known); otherwise it is fetched from [shaUrl]. */
+    val sha256: String? = null
 ) {
     fun toJson(): String = JSONObject().apply {
         put("tag", tag); put("title", title); put("notes", notes); put("apkUrl", apkUrl); put("apkName", apkName)
-        put("shaUrl", shaUrl ?: ""); put("pageUrl", pageUrl); put("prerelease", prerelease)
+        put("shaUrl", shaUrl ?: ""); put("pageUrl", pageUrl); put("prerelease", prerelease); put("sha256", sha256 ?: "")
     }.toString()
 
     companion object {
@@ -41,8 +43,8 @@ data class UpdateInfo(
             if (s.isNullOrBlank()) null else JSONObject(s).let {
                 UpdateInfo(
                     it.getString("tag"), it.optString("title"), it.optString("notes"), it.getString("apkUrl"),
-                    it.optString("apkName", "ClassVibe.apk"), it.optString("shaUrl").ifBlank { null },
-                    it.optString("pageUrl"), it.optBoolean("prerelease")
+                    it.optString("apkName", "ClassVibe-${it.getString("tag")}.apk"), it.optString("shaUrl").ifBlank { null },
+                    it.optString("pageUrl"), it.optBoolean("prerelease"), it.optString("sha256").ifBlank { null }
                 )
             }
         } catch (e: Exception) { null }
@@ -50,11 +52,14 @@ data class UpdateInfo(
 }
 
 /**
- * Checks GitHub Releases of BuildConfig.GITHUB_REPO for a newer version.
- * Privacy: sends only an anonymous HTTPS GET to api.github.com – no personal data.
- * Security: the APK is downloaded by the system DownloadManager, its SHA-256 is checked
- * against the published .sha256 file and its signing certificate must match this app's.
- * The app never installs anything itself (no "install unknown apps" permission).
+ * Finds a newer ClassVibe release. Three sources, tried in order, so checks work even on
+ * busy college Wi-Fi where GitHub's API limit (60 requests/hour per network) is used up:
+ *  1. version.json on the project website (GitHub Pages, written by the release workflow) – no hourly limit;
+ *  2. the github.com/…/releases/latest redirect – a normal web page (stable releases only);
+ *  3. the GitHub REST API.
+ * Privacy: anonymous HTTPS GETs only – no personal data.
+ * Security: the APK's SHA-256 must match the published checksum and its signing certificate
+ * must match this app's before [UpdateInstaller] hands it to Android's package installer.
  */
 object UpdateChecker {
 
@@ -70,26 +75,133 @@ object UpdateChecker {
         object NotConfigured : Result()
     }
 
-    private fun get(url: String): String {
-        val conn = (URL(url).openConnection() as HttpURLConnection).apply {
+    class HttpError(val code: Int) : Exception("Server answered $code")
+
+    private fun open(url: String, follow: Boolean = true): HttpURLConnection =
+        (URL(url).openConnection() as HttpURLConnection).apply {
             connectTimeout = 10_000
             readTimeout = 15_000
-            setRequestProperty("Accept", "application/vnd.github+json")
+            instanceFollowRedirects = follow
+            useCaches = false
+            setRequestProperty("Accept", "application/vnd.github+json, application/json, */*")
             setRequestProperty("User-Agent", "ClassVibe-Android/${BuildConfig.VERSION_NAME}")
         }
+
+    private fun get(url: String): String {
+        val conn = open(url)
         try {
-            if (conn.responseCode !in 200..299) throw IllegalStateException("GitHub answered ${conn.responseCode}")
+            if (conn.responseCode !in 200..299) throw HttpError(conn.responseCode)
             return conn.inputStream.bufferedReader().use { it.readText() }
         } finally {
             conn.disconnect()
         }
     }
 
+    private val repo: String get() = BuildConfig.GITHUB_REPO
+    private val owner: String get() = repo.substringBefore('/')
+    private val repoName: String get() = repo.substringAfter('/')
+
+    /** The project website, e.g. https://aksharganji23.github.io/ClassVibe/ */
+    val websiteUrl: String get() = "https://${owner.lowercase()}.github.io/$repoName/"
+
+    /** Standard asset names produced by .github/workflows/release.yml. */
+    fun apkNameFor(tag: String) = "ClassVibe-$tag.apk"
+
+    private val current: Semver get() = Semver.parse(BuildConfig.VERSION_NAME) ?: Semver(0, 0, 0, "")
+
     suspend fun check(context: Context, includePrerelease: Boolean): Result = withContext(Dispatchers.IO) {
         if (!isConfigured) return@withContext Result.NotConfigured
+        val failures = mutableListOf<Exception>()
+        var found: Pair<Semver, UpdateInfo>? = null
+        var answered = false
+        // 1) version.json on the website
         try {
-            val releases = JSONArray(get("https://api.github.com/repos/${BuildConfig.GITHUB_REPO}/releases?per_page=15"))
-            val current = Semver.parse(BuildConfig.VERSION_NAME) ?: Semver(0, 0, 0, "")
+            found = fromVersionJson(includePrerelease); answered = true
+        } catch (e: Exception) { failures.add(e) }
+        // 2) releases/latest redirect (stable only – betas need the list)
+        if (!answered && !includePrerelease) {
+            try {
+                found = fromLatestRedirect(); answered = true
+            } catch (e: Exception) { failures.add(e) }
+        }
+        // 3) GitHub API
+        if (!answered) {
+            try {
+                found = fromApi(includePrerelease); answered = true
+            } catch (e: Exception) { failures.add(e) }
+        }
+        if (!answered) return@withContext Result.Failed(explain(failures))
+        AppSettings.update(context) {
+            it[AppSettings.Keys.LAST_UPDATE_CHECK] = System.currentTimeMillis()
+            it[AppSettings.Keys.AVAILABLE_UPDATE] = found?.second?.toJson() ?: ""
+        }
+        found?.let { Result.Available(it.second) } ?: Result.UpToDate
+    }
+
+    private fun explain(failures: List<Exception>): String {
+        val codes = failures.filterIsInstance<HttpError>().map { it.code }
+        return when {
+            codes.any { it == 403 || it == 429 } ->
+                "Too many update checks from this network 😅 (shared college Wi-Fi?). Try mobile data or wait an hour."
+            failures.any { it is java.net.UnknownHostException || it is java.net.SocketTimeoutException || it is java.net.ConnectException } ->
+                "No internet connection (or the network blocks GitHub). Try mobile data."
+            failures.any { it is javax.net.ssl.SSLException } ->
+                "This network intercepts secure connections (college firewall?). Try mobile data."
+            codes.isNotEmpty() -> "GitHub answered ${codes.last()}. Try again later."
+            else -> failures.lastOrNull()?.message ?: "No internet connection"
+        }
+    }
+
+    /** version.json: { "stable": {release}, "beta": {release} | null } */
+    private fun fromVersionJson(includePrerelease: Boolean): Pair<Semver, UpdateInfo>? {
+        val root = JSONObject(get(websiteUrl + "version.json?t=" + System.currentTimeMillis() / 60_000))
+        val candidates = listOfNotNull(
+            root.optJSONObject("stable"),
+            if (includePrerelease) root.optJSONObject("beta") else null
+        )
+        var best: Pair<Semver, UpdateInfo>? = null
+        for (r in candidates) {
+            val tag = r.optString("tag")
+            val apkUrl = r.optString("apk_url")
+            if (tag.isBlank() || apkUrl.isBlank()) continue
+            val v = Semver.parse(tag) ?: continue
+            if (v <= current) continue
+            val info = UpdateInfo(
+                tag = tag,
+                title = r.optString("title").ifBlank { tag },
+                notes = r.optString("notes"),
+                apkUrl = apkUrl,
+                apkName = r.optString("apk_name").ifBlank { apkNameFor(tag) },
+                shaUrl = r.optString("sha_url").ifBlank { null },
+                pageUrl = r.optString("page_url"),
+                prerelease = r.optBoolean("prerelease"),
+                sha256 = r.optString("sha256").ifBlank { null }
+            )
+            if (best == null || v > best.first) best = v to info
+        }
+        return best
+    }
+
+    /** github.com/owner/repo/releases/latest → 302 to …/releases/tag/vX.Y.Z */
+    private fun fromLatestRedirect(): Pair<Semver, UpdateInfo>? {
+        val conn = open("https://github.com/$repo/releases/latest", follow = false)
+        val location = try {
+            if (conn.responseCode !in 300..399) throw HttpError(conn.responseCode)
+            conn.getHeaderField("Location") ?: throw HttpError(conn.responseCode)
+        } finally {
+            conn.disconnect()
+        }
+        val tag = location.substringAfter("/releases/tag/", "").substringBefore('?').ifBlank { return null }
+        val v = Semver.parse(tag) ?: return null
+        if (v <= current) return null
+        val name = apkNameFor(tag)
+        val apkUrl = "https://github.com/$repo/releases/download/$tag/$name"
+        return v to UpdateInfo(tag, tag, "", apkUrl, name, "$apkUrl.sha256", location, prerelease = false)
+    }
+
+    private fun fromApi(includePrerelease: Boolean): Pair<Semver, UpdateInfo>? {
+        run {
+            val releases = JSONArray(get("https://api.github.com/repos/$repo/releases?per_page=15"))
             var best: Pair<Semver, UpdateInfo>? = null
             for (i in 0 until releases.length()) {
                 val r = releases.getJSONObject(i)
@@ -105,7 +217,7 @@ object UpdateChecker {
                 for (a in 0 until assets.length()) {
                     val asset = assets.getJSONObject(a)
                     val name = asset.getString("name")
-                    // Prefer the versioned file (ClassVibe-v1.2.0.apk) over the stable copy (ClassVibe.apk).
+                    // Prefer the versioned file (ClassVibe-v1.3.0.apk); old releases also had a plain ClassVibe.apk.
                     if (name.endsWith(".apk") && (apk == null || name != "ClassVibe.apk")) apk = asset
                     if (name.endsWith(".sha256")) sha = asset
                 }
@@ -122,23 +234,17 @@ object UpdateChecker {
                 )
                 if (best == null || version > best.first) best = version to info
             }
-            AppSettings.update(context) {
-                it[AppSettings.Keys.LAST_UPDATE_CHECK] = System.currentTimeMillis()
-                it[AppSettings.Keys.AVAILABLE_UPDATE] = best?.second?.toJson() ?: ""
-            }
-            best?.let { Result.Available(it.second) } ?: Result.UpToDate
-        } catch (e: Exception) {
-            Result.Failed(e.message ?: "No internet connection")
+            return best
         }
     }
 
-    /** Starts the download with the system DownloadManager (no storage or install permission needed). */
+    /** Starts the download with the system DownloadManager into the app's own folder. */
     suspend fun download(context: Context, info: UpdateInfo): Long {
         val dm = context.getSystemService(DownloadManager::class.java)
         File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), info.apkName).delete()
         val request = DownloadManager.Request(Uri.parse(info.apkUrl))
             .setTitle("ClassVibe ${info.tag}")
-            .setDescription("Downloading update…")
+            .setDescription("Downloading ${info.apkName}…")
             .setMimeType("application/vnd.android.package-archive")
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
             .setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, info.apkName)
@@ -188,15 +294,20 @@ object UpdateChecker {
     /**
      * Verifies the downloaded APK. Returns null when everything checks out, otherwise the reason.
      */
+    fun downloadedFile(context: Context, info: UpdateInfo): File =
+        File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), info.apkName)
+
     suspend fun verify(context: Context, info: UpdateInfo): String? = withContext(Dispatchers.IO) {
-        val file = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), info.apkName)
+        val file = downloadedFile(context, info)
         if (!file.exists()) return@withContext "Downloaded file not found."
-        // 1) Checksum published with the release.
-        val shaUrl = info.shaUrl ?: return@withContext "This release has no .sha256 checksum file."
-        val expected = try {
-            get(shaUrl).trim().split(Regex("""\s+""")).first().lowercase()
-        } catch (e: Exception) {
-            return@withContext "Couldn't download the checksum."
+        // 1) Checksum published with the release (in version.json, or the .sha256 file).
+        val expected = info.sha256?.lowercase() ?: run {
+            val shaUrl = info.shaUrl ?: return@withContext "This release has no .sha256 checksum file."
+            try {
+                get(shaUrl).trim().split(Regex("""\s+""")).first().lowercase()
+            } catch (e: Exception) {
+                return@withContext "Couldn't download the checksum."
+            }
         }
         if (sha256(file) != expected) return@withContext "Checksum mismatch – the file may be corrupted or tampered with."
         // 2) Same package + same signing key as the installed app.

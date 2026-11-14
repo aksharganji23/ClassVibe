@@ -71,6 +71,7 @@ fun HomeScreen(
     prefs: AppPrefs,
     now: LocalDateTime,
     update: UpdateInfo?,
+    downloadProgress: Int?,
     notificationsEnabled: Boolean,
     exactAlarmsAllowed: Boolean,
     onEnableNotifications: () -> Unit,
@@ -119,7 +120,7 @@ fun HomeScreen(
             WarningBanner("🏖️ ${holiday.label} – class reminders are paused today.", "Undo", { onRemoveHoliday(holiday) }, Cv.colors.accent)
         }
         if (update != null && !hideUpdate && update.tag != prefs.skippedVersion) item {
-            UpdateCard(update, onUpdate = { onUpdate(update) }, onLater = { hideUpdate = true }, onSkip = { onSkipUpdate(update) })
+            UpdateCard(update, downloadProgress, onUpdate = { onUpdate(update) }, onLater = { hideUpdate = true }, onSkip = { onSkipUpdate(update) })
         }
 
         // Weekend prep card
@@ -294,7 +295,7 @@ private fun WeekendCard(exams: List<Exam>, onOpen: () -> Unit) {
 }
 
 @Composable
-private fun UpdateCard(info: UpdateInfo, onUpdate: () -> Unit, onLater: () -> Unit, onSkip: () -> Unit) {
+private fun UpdateCard(info: UpdateInfo, progress: Int?, onUpdate: () -> Unit, onLater: () -> Unit, onSkip: () -> Unit) {
     Card(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
@@ -308,7 +309,15 @@ private fun UpdateCard(info: UpdateInfo, onUpdate: () -> Unit, onLater: () -> Un
                 Text(info.notes.take(300), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSecondaryContainer, maxLines = 6, overflow = TextOverflow.Ellipsis)
             }
             Spacer(Modifier.height(10.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (progress != null) {
+                Text(
+                    if (progress > 100) "🔐 Verifying & installing… Android will ask you to tap Update" else "⬇️ Downloading ${info.apkName} – $progress%",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                Spacer(Modifier.height(6.dp))
+                if (progress > 100) androidx.compose.material3.LinearProgressIndicator(Modifier.fillMaxWidth())
+                else androidx.compose.material3.LinearProgressIndicator(progress = { progress / 100f }, modifier = Modifier.fillMaxWidth())
+            } else Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Button(onClick = onUpdate) { Text("Update") }
                 OutlinedButton(onClick = onLater) { Text("Later") }
                 TextButton(onClick = onSkip) { Text("Skip version") }

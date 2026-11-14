@@ -21,7 +21,8 @@ a { color: var(--blue); }
 
 .hero { background: linear-gradient(160deg, var(--blue) 0%, var(--blue-dark) 100%); color: #fff; padding-bottom: 56px; }
 .nav { display: flex; justify-content: space-between; align-items: center; padding-top: 18px; padding-bottom: 18px; }
-.logo { font-weight: 900; font-size: 1.35rem; letter-spacing: -0.02em; }
+.logo { font-weight: 900; font-size: 1.35rem; letter-spacing: -0.02em; display: inline-flex; align-items: center; gap: 10px; }
+.logo-img { border-radius: 9px; }
 .bolt { color: var(--orange); }
 .navlink { color: #fff; opacity: .85; text-decoration: none; font-weight: 600; }
 .navlink:hover { opacity: 1; }

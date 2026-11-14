@@ -1,8 +1,11 @@
+# Publishes the download website (site/) to GitHub Pages, together with version.json,
+# which the app reads to find updates (no GitHub API rate limit for users).
+# Runs on changes to site/, after every release (started by release.yml) and by hand.
 name: Deploy website
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
     paths: ["site/**", ".github/workflows/pages.yml"]
   workflow_dispatch:
 
@@ -23,6 +26,48 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Write version.json from the latest releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh api "repos/$REPO/releases?per_page=30" > releases.json
+          python3 - <<'PY'
+          import json, urllib.request
+          rels = [r for r in json.load(open("releases.json")) if not r.get("draft")]
+          def pick(r):
+              if not r: return None
+              apks = [a for a in r["assets"] if a["name"].endswith(".apk")]
+              apk = next((a for a in apks if a["name"] != "ClassVibe.apk"), apks[0] if apks else None)
+              if not apk: return None
+              sha = next((a for a in r["assets"] if a["name"] == apk["name"] + ".sha256"), None)
+              checksum = ""
+              if sha:
+                  try:
+                      checksum = urllib.request.urlopen(sha["browser_download_url"], timeout=30).read().decode().split()[0].lower()
+                  except Exception as e:
+                      print("checksum download failed:", e)
+              return {
+                  "tag": r["tag_name"],
+                  "title": r.get("name") or r["tag_name"],
+                  "notes": (r.get("body") or "")[:2000],
+                  "apk_url": apk["browser_download_url"],
+                  "apk_name": apk["name"],
+                  "size": apk["size"],
+                  "sha256": checksum,
+                  "sha_url": sha["browser_download_url"] if sha else "",
+                  "page_url": r["html_url"],
+                  "prerelease": r["prerelease"],
+                  "published": r.get("published_at"),
+              }
+          stable = next((r for r in rels if not r["prerelease"]), None)
+          beta = next((r for r in rels if r["prerelease"]), None)
+          out = {"stable": pick(stable), "beta": pick(beta)}
+          json.dump(out, open("site/version.json", "w"), indent=2)
+          print(json.dumps(out, indent=2)[:1500])
+          PY
+
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

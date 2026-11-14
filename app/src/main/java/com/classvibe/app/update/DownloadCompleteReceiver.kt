@@ -26,17 +26,24 @@ class DownloadCompleteReceiver : BroadcastReceiver() {
                 val info = UpdateInfo.fromJson(raw[AppSettings.Keys.AVAILABLE_UPDATE]) ?: return@launch
                 val problem = UpdateChecker.verify(context, info)
                 if (problem == null) {
-                    val open = PendingIntent.getActivity(
-                        context, 77,
-                        Intent(DownloadManager.ACTION_VIEW_DOWNLOADS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                        PendingIntent.FLAG_IMMUTABLE
-                    )
-                    NotificationHelper.post(
-                        context, NotificationHelper.ID_UPDATE, NotificationHelper.CH_UPDATES,
-                        "✅ ClassVibe ${info.tag} verified – tap to install",
-                        "Checksum and signature are OK. Tap, then tap the ClassVibe file to install.",
-                        contentIntent = open
-                    )
+                    val file = UpdateChecker.downloadedFile(context, info)
+                    UpdateInstaller.saveBackupCopy(context, file, info.apkName)
+                    if (UpdateInstaller.canInstall(context)) {
+                        UpdateInstaller.install(context, file, info.tag)
+                    } else {
+                        val allow = PendingIntent.getActivity(
+                            context, 77,
+                            Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, android.net.Uri.parse("package:${context.packageName}"))
+                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                            PendingIntent.FLAG_IMMUTABLE
+                        )
+                        NotificationHelper.post(
+                            context, NotificationHelper.ID_UPDATE, NotificationHelper.CH_UPDATES,
+                            "✅ ClassVibe ${info.tag} downloaded & verified",
+                            "Tap to allow ClassVibe to install updates, then tap Update in the app again.",
+                            contentIntent = allow
+                        )
+                    }
                 } else {
                     val dm = context.getSystemService(DownloadManager::class.java)
                     dm.remove(id)

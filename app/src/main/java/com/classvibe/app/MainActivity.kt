@@ -172,6 +172,7 @@ private fun MainScaffold(vm: AppViewModel, prefs: AppPrefs, requestedTab: Mutabl
     val importState by importVm.state.collectAsStateWithLifecycle()
     val scanState by vm.scan.collectAsStateWithLifecycle()
     val cloudBackup by vm.cloudBackup.collectAsStateWithLifecycle()
+    val downloadProgress by vm.downloadProgress.collectAsStateWithLifecycle()
     var overlay by rememberSaveable { mutableStateOf<Overlay?>(null) }
     var showNextClass by remember { mutableStateOf(false) }
     var openBunk by remember { mutableStateOf(false) }
@@ -211,6 +212,7 @@ private fun MainScaffold(vm: AppViewModel, prefs: AppPrefs, requestedTab: Mutabl
         val nowExact = ReminderScheduler.canScheduleExact(context)
         if (nowExact && !exactOk) ReminderScheduler.enqueueImmediateResync(context)
         exactOk = nowExact
+        vm.resumePendingUpdate()
     }
     val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         notificationsOk = granted && NotificationHelper.canPostNotifications(context)
@@ -357,7 +359,7 @@ private fun MainScaffold(vm: AppViewModel, prefs: AppPrefs, requestedTab: Mutabl
                     when (tabs[page]) {
                         AppTab.TODAY -> HomeScreen(
                             classes = classes, exams = exams, attendance = attendance, holidays = holidays, prefs = prefs, now = now,
-                            update = update,
+                            update = update, downloadProgress = downloadProgress,
                             notificationsEnabled = notificationsOk, exactAlarmsAllowed = exactOk,
                             onEnableNotifications = openNotificationSettings, onAllowExactAlarms = openExactAlarmSettings,
                             onGoToImport = { overlay = Overlay.IMPORT }, onGoToExams = { goTo(AppTab.EXAMS) },

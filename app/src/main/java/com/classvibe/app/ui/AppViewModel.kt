@@ -452,13 +452,70 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Download progress of an update: null = idle, 0..100 = downloading, 101 = verifying & installing. */
+    private val _downloadProgress = MutableStateFlow<Int?>(null)
+    val downloadProgress: StateFlow<Int?> = _downloadProgress.asStateFlow()
+    private var pendingUpdate: UpdateInfo? = null
+
+    /** Tap on "Update": download → verify → install (one tap after the first-time permission). */
     fun downloadUpdate(info: UpdateInfo) = io {
+        if (!com.classvibe.app.update.UpdateInstaller.canInstall(context)) {
+            pendingUpdate = info
+            toast("Allow ClassVibe to install updates, then come back – the update starts by itself 👍")
+            try { com.classvibe.app.update.UpdateInstaller.openInstallPermission(context) } catch (e: Exception) { }
+            return@io
+        }
         try {
-            UpdateChecker.download(context, info)
-            toast("⬇️ Downloading ${info.tag}… you'll get a notification when it's verified")
+            val id = UpdateChecker.download(context, info)
+            toast("⬇️ Downloading ${info.apkName}…")
+            trackDownload(id)
         } catch (e: Exception) {
+            _downloadProgress.value = null
             toast("Download failed: ${e.message}")
         }
+    }
+
+    /** Called when the app comes back to the foreground (e.g. from the permission screen). */
+    fun resumePendingUpdate() {
+        val info = pendingUpdate ?: return
+        if (com.classvibe.app.update.UpdateInstaller.canInstall(context)) {
+            pendingUpdate = null
+            downloadUpdate(info)
+        }
+    }
+
+    private suspend fun trackDownload(id: Long) {
+        val dm = context.getSystemService(android.app.DownloadManager::class.java)
+        _downloadProgress.value = 0
+        while (true) {
+            kotlinx.coroutines.delay(500)
+            val cursor = dm.query(android.app.DownloadManager.Query().setFilterById(id)) ?: break
+            val row: Triple<Int, Long, Long>? = cursor.use {
+                if (!it.moveToFirst()) null
+                else Triple(
+                    it.getInt(it.getColumnIndexOrThrow(android.app.DownloadManager.COLUMN_STATUS)),
+                    it.getLong(it.getColumnIndexOrThrow(android.app.DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)),
+                    it.getLong(it.getColumnIndexOrThrow(android.app.DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
+                )
+            }
+            if (row == null) break
+            val (status, done, total) = row
+            when (status) {
+                android.app.DownloadManager.STATUS_SUCCESSFUL -> {
+                    _downloadProgress.value = 101
+                    kotlinx.coroutines.delay(15_000)
+                    _downloadProgress.value = null
+                    return
+                }
+                android.app.DownloadManager.STATUS_FAILED -> {
+                    _downloadProgress.value = null
+                    toast("Download failed – check your internet and try again")
+                    return
+                }
+                else -> if (total > 0) _downloadProgress.value = ((done * 100) / total).toInt().coerceIn(0, 100)
+            }
+        }
+        _downloadProgress.value = null
     }
 
     fun skipUpdate(info: UpdateInfo) = io {

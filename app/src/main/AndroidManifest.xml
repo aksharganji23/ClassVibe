@@ -2,7 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- Minimal permission set. No SMS, contacts, location, camera, storage,
-         accessibility, overlay or install-packages permissions. -->
+         accessibility or overlay permissions. -->
+    <!-- One-tap updates: lets ClassVibe hand its own verified update to Android's installer.
+         The user switches it on once ("Install unknown apps"). -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
@@ -74,6 +77,11 @@
                 <action android:name="android.intent.action.DOWNLOAD_COMPLETE" />
             </intent-filter>
         </receiver>
+
+        <!-- Result of installing an update (sent by Android's PackageInstaller) -->
+        <receiver
+            android:name=".update.InstallResultReceiver"
+            android:exported="false" />
 
         <!-- Home-screen widget -->
         <receiver

@@ -19,5 +19,8 @@ class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action !in handledActions) return
         ReminderScheduler.enqueueImmediateResync(context)
+        if (intent.action == Intent.ACTION_MY_PACKAGE_REPLACED) {
+            com.classvibe.app.update.UpdatedNotifier.notifyIfJustUpdated(context)
+        }
     }
 }

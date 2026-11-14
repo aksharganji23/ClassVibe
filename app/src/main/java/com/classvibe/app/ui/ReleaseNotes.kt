@@ -2,16 +2,11 @@ package com.classvibe.app.ui
 
 /** Shown once after each update in the "What's new" dialog. Keep in sync with CHANGELOG.md. */
 object ReleaseNotes {
-    const val CURRENT = """🔍 Sharp Eye – share, plan, bunk (responsibly)
+    const val CURRENT = """🛼 Smooth Operator – updates that just work
 
-🧭 Simpler: 4 tabs – Settings is the ⚙️ icon, Import is on Timetable
-🔳 QR sharing: pick what to share, funny QR themes, scanning only adds new stuff
-🧮 Bunk planner + attendance % calculator (Stats tab)
-📆 Export classes, exams & holidays to your calendar (.ics)
-⚡ App shortcuts – long-press the ClassVibe icon
-📝 Edit exam reminder schedules per exam type
-🔍 Searchable subject picker with colours
-👍👎 Rate messages right from the notification
-☁️ Phone cloud backup toggle
-📸 Better photo import: shadow removal, merged lab cells, auto-crop"""
+📲 One-tap updates: tap Update → progress bar → Android installs it
+🌐 Update checks now work on busy college Wi-Fi
+🏷️ Every download is named with its version (ClassVibe-v1.3.0.apk)
+💾 A copy of each update is kept in Downloads/ClassVibe
+🎨 The original calendar ⚡ logo is back – now in ClassVibe blue"""
 }
