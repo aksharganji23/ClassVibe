@@ -38,7 +38,18 @@ object ReminderContent {
         "when" to TimeUtils.whenText(lead)
     )
 
-    private fun details(c: ClassSchedule): String = buildString {
+    /** "57 min", "1 h 5 min", "2 days" */
+    fun leftText(minutes: Int): String = when {
+        minutes < 60 -> "$minutes min"
+        minutes < 24 * 60 -> (minutes / 60).let { h -> val m = minutes % 60; if (m == 0) "$h h" else "$h h $m min" }
+        else -> (minutes / (24 * 60)).let { d -> if (d == 1) "1 day" else "$d days" }
+    }
+
+    private fun details(c: ClassSchedule, minutesLeft: Int? = null): String = buildString {
+        if (minutesLeft != null) {
+            append(if (minutesLeft <= 0) "🟢 Starting now" else "⏳ Starts in ${leftText(minutesLeft)} (at ${TimeUtils.formatFriendly(c.startMinutes)})")
+            append("\n")
+        }
         append("📘 ").append(c.course)
         append("\n🏷️ ").append(c.classType.ifBlank { "Class" }).append("  •  🕒 ").append(c.timeRangeText)
         if (c.room.isNotBlank()) append("\n📍 Room ").append(room(c.room))
@@ -66,9 +77,12 @@ object ReminderContent {
         date: LocalDate,
         prefs: AppPrefs,
         todaysActive: List<ClassSchedule>,
-        attendance: List<AttendanceRecord>
+        attendance: List<AttendanceRecord>,
+        /** Real minutes until the class starts (may differ from [lead] if the reminder ran late). */
+        minutesLeft: Int = lead
     ): Built {
-        val vars = classVars(c, lead).toMutableMap()
+        val vars = classVars(c, minutesLeft.coerceAtLeast(0)).toMutableMap()
+        vars["left"] = leftText(minutesLeft.coerceAtLeast(0))
         val type = c.classType.lowercase()
         val choices = mutableListOf<Choice>()
         choices += Choice(
@@ -90,7 +104,10 @@ object ReminderContent {
         if (date.dayOfWeek == DayOfWeek.FRIDAY) choices += Choice("DAY_FRIDAY", 0.8)
         courseCategory(c.course)?.let { choices += Choice(it, 2.0) }
 
-        val courseStats = AttendanceStats.byCourse(attendance.filter { it.course == c.course }).firstOrNull()
+        val courseStats = AttendanceStats.byCourse(
+            attendance.filter { it.course == c.course },
+            prefs.attendanceBaseline.filterKeys { it == c.course }
+        ).firstOrNull()
         if (courseStats != null && courseStats.isLow) {
             choices += Choice("ATTEND_LOW", 2.5)
             vars["pct"] = courseStats.percent.toString()
@@ -101,9 +118,15 @@ object ReminderContent {
             vars["streak"] = streak.toString()
         }
 
+        // Every title says how long is left, so it's clear at a glance.
         val title = MessageBank.render(
-            if (lead == 0) "🔔 {course} is starting now"
-            else listOf("⏰ {course} {when}", "🔔 {class_type}: {course}", "📚 {course} at {start_time}", "⚡ Heads up — {course}").random(),
+            if (minutesLeft <= 0) "🔔 {course} is starting now"
+            else listOf(
+                "⏳ In {left}: {course}",
+                "⏰ {course} starts in {left}",
+                "⚡ {left} to go — {course}",
+                "📚 {course} in {left} ({start_time})"
+            ).random(),
             vars
         )
         val line = MessageBank.pick(context, choices, prefs.messageStyle, "CLASS")
@@ -112,7 +135,7 @@ object ReminderContent {
                 (if (c.instructor.isNotBlank()) " • ${c.instructor}" else "")
         } else MessageBank.render(line.text, vars)
         line?.let { MessageBank.log(context, it.id, body) }
-        return Built(title, body, body + "\n\n" + details(c), line?.id)
+        return Built(title, body, body + "\n\n" + details(c, minutesLeft), line?.id)
     }
 
     // ------------------------------------------------------------ class ending

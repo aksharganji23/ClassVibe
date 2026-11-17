@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -81,6 +82,11 @@ fun QrShareScreen(vm: AppViewModel, scan: ScanUi, classes: List<ClassSchedule>) 
 private fun ShareSection(vm: AppViewModel, classes: List<ClassSchedule>) {
     val context = LocalContext.current
     var sel by remember { mutableStateOf(ShareSelection()) }
+    // What *could* be shared with the current day/exam filters – shown as counts next to each item.
+    val avail = remember(sel.days, sel.examFilter, classes) {
+        vm.sharePayload(sel.copy(classes = true, exams = true, holidays = true, semester = true, subjects = true, attendance = true))
+    }
+    var fullScreen by remember { mutableStateOf(false) }
     var theme by rememberSaveable { mutableStateOf(FunnyQr.Theme.CLASSIC) }
     var caption by rememberSaveable { mutableStateOf(FunnyQr.CAPTIONS.first()) }
     var ownCaption by rememberSaveable { mutableStateOf(false) }
@@ -88,7 +94,7 @@ private fun ShareSection(vm: AppViewModel, classes: List<ClassSchedule>) {
     LaunchedEffect(sel) { part = 0 }
 
     SectionCard("✅ What to share", "Pick exactly what goes into the QR code", initiallyExpanded = true) {
-        CheckRow("🗓️ Timetable", sel.classes) { sel = sel.copy(classes = it) }
+        CheckRow("🗓️ Timetable", sel.classes, countLabel(avail.classes.size, "class", "classes")) { sel = sel.copy(classes = it) }
         if (sel.classes) {
             val days = classes.map { it.dayOfWeek }.distinct().sorted()
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -102,7 +108,7 @@ private fun ShareSection(vm: AppViewModel, classes: List<ClassSchedule>) {
                 }
             }
         }
-        CheckRow("📝 Exams", sel.exams) { sel = sel.copy(exams = it) }
+        CheckRow("📝 Exams", sel.exams, countLabel(avail.exams.size, "exam", "exams")) { sel = sel.copy(exams = it) }
         if (sel.exams) {
             val options = listOf("UPCOMING" to "Upcoming exams", "ALL" to "All exams (incl. past)") +
                 ExamType.entries.map { it.name to "Only ${it.emoji} ${it.label}" }
@@ -111,10 +117,13 @@ private fun ShareSection(vm: AppViewModel, classes: List<ClassSchedule>) {
                 { picked -> sel = sel.copy(examFilter = options.first { it.second == picked }.first) }, Modifier.fillMaxWidth()
             )
         }
-        CheckRow("🏖️ Holidays", sel.holidays) { sel = sel.copy(holidays = it) }
-        CheckRow("🏫 Semester dates", sel.semester) { sel = sel.copy(semester = it) }
-        CheckRow("📘 My extra subjects", sel.subjects) { sel = sel.copy(subjects = it) }
-        CheckRow("📊 Attendance marks (personal!)", sel.attendance) { sel = sel.copy(attendance = it) }
+        CheckRow("🏖️ Holidays", sel.holidays, countLabel(avail.holidays.size, "holiday", "holidays")) { sel = sel.copy(holidays = it) }
+        CheckRow(
+            "🏫 Semester dates", sel.semester,
+            if (avail.semesterStart != null || avail.semesterEnd != null) "set" else "not set"
+        ) { sel = sel.copy(semester = it) }
+        CheckRow("📘 My extra subjects", sel.subjects, countLabel(avail.subjects.size, "subject", "subjects")) { sel = sel.copy(subjects = it) }
+        CheckRow("📊 Attendance marks (personal!)", sel.attendance, countLabel(avail.attendance.size, "mark", "marks")) { sel = sel.copy(attendance = it) }
     }
 
     SectionCard("🎨 QR style", "${theme.label} • funny caption", initiallyExpanded = true) {
@@ -141,10 +150,35 @@ private fun ShareSection(vm: AppViewModel, classes: List<ClassSchedule>) {
     }
 
     if (payload.isEmpty) {
-        Text("Nothing selected yet – tick at least one item above.", color = MaterialTheme.colorScheme.error)
+        val anyTicked = sel.classes || sel.exams || sel.holidays || sel.semester || sel.subjects || sel.attendance
+        val why = if (!anyTicked) "Nothing selected yet – tick at least one item above." else buildList {
+            if (sel.classes) add(if (sel.days.isEmpty()) "no classes in your timetable" else "no classes on the chosen days")
+            if (sel.exams) add(
+                when (sel.examFilter) {
+                    "UPCOMING" -> "no upcoming exams (add one in the Exams tab or pick \"All exams\")"
+                    "ALL" -> "no exams saved"
+                    else -> "no exams of that type"
+                }
+            )
+            if (sel.holidays) add("no holidays")
+            if (sel.semester) add("semester dates not set")
+            if (sel.subjects) add("no extra subjects")
+            if (sel.attendance) add("no attendance marks")
+        }.joinToString(", ", prefix = "Nothing to share yet: ", postfix = ".").replaceFirstChar { it.uppercase() }
+        Text(why, color = MaterialTheme.colorScheme.error)
         return
     }
-    Text("Contains: ${payload.summary()}" + if (parts.size > 1) " • ${parts.size} QR codes (scan all, any order)" else "", style = MaterialTheme.typography.bodyMedium)
+    Text(
+        "Contains: ${payload.summary()}" +
+            if (parts.size > 1) " • Too much for one QR, so it's split into ${parts.size} codes (scan all, any order). Untick attendance or holidays to fit one." else " • 1 QR code",
+        style = MaterialTheme.typography.bodyMedium
+    )
+    Button(onClick = { fullScreen = true }, modifier = Modifier.fillMaxWidth()) { Text("📱 Show to scan (full screen, bright)") }
+    Text(
+        "Best for scanning with another phone's camera. Share / Save keep the funny design.",
+        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+    if (fullScreen) FullScreenQr(parts, part, onPart = { part = it }) { fullScreen = false }
     Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
         val img = images.getOrNull(part.coerceIn(0, maxOf(0, images.size - 1)))
         Box(Modifier.fillMaxWidth().aspectRatio(1080f / 1400f), contentAlignment = Alignment.Center) {
@@ -171,11 +205,70 @@ private fun ShareSection(vm: AppViewModel, classes: List<ClassSchedule>) {
     }
 }
 
+private fun countLabel(n: Int, one: String, many: String) = if (n == 0) "none" else "$n ${if (n == 1) one else many}"
+
 @Composable
-private fun CheckRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+private fun CheckRow(label: String, checked: Boolean, count: String? = null, onChange: (Boolean) -> Unit) {
+    val empty = count == "none" || count == "not set"
     Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).clickable { onChange(!checked) }, verticalAlignment = Alignment.CenterVertically) {
         Checkbox(checked = checked, onCheckedChange = onChange)
-        Text(label, style = MaterialTheme.typography.bodyLarge)
+        Text(
+            label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f),
+            color = if (empty) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface
+        )
+        if (count != null) Text(
+            count, style = MaterialTheme.typography.labelMedium,
+            color = if (empty) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f) else MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(end = 8.dp)
+        )
+    }
+}
+
+/** Plain, high-contrast QR filling the screen at full brightness – easiest for a camera to read. */
+@Composable
+private fun FullScreenQr(parts: List<String>, part: Int, onPart: (Int) -> Unit, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val index = part.coerceIn(0, maxOf(0, parts.size - 1))
+    val img by produceState<Bitmap?>(null, parts, index) {
+        value = withContext(Dispatchers.Default) { parts.getOrNull(index)?.let { FunnyQr.renderPlain(it) } }
+    }
+    androidx.compose.ui.window.Dialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        // Max brightness while shown; restored when closed.
+        val window = (androidx.compose.ui.platform.LocalView.current.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
+            ?: (context as? android.app.Activity)?.window
+        androidx.compose.runtime.DisposableEffect(window) {
+            val old = window?.attributes?.screenBrightness
+            window?.let { w -> w.attributes = w.attributes.apply { screenBrightness = 1f } }
+            onDispose { window?.let { w -> w.attributes = w.attributes.apply { screenBrightness = old ?: -1f } } }
+        }
+        Column(
+            Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color.White).clickable { onDismiss() }.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text("Scan in ClassVibe → QR sharing → Scan", color = androidx.compose.ui.graphics.Color.Black, style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(16.dp))
+            val bmp = img
+            Box(Modifier.fillMaxWidth().aspectRatio(1f), contentAlignment = Alignment.Center) {
+                if (bmp == null) CircularProgressIndicator()
+                else Image(
+                    bmp.asImageBitmap(), contentDescription = "QR code", contentScale = ContentScale.Fit,
+                    filterQuality = androidx.compose.ui.graphics.FilterQuality.None, modifier = Modifier.fillMaxSize()
+                )
+            }
+            Spacer(Modifier.height(16.dp))
+            if (parts.size > 1) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(enabled = index > 0, onClick = { onPart(index - 1) }) { Text("← Previous") }
+                    Text("Part ${index + 1} / ${parts.size}", color = androidx.compose.ui.graphics.Color.Black)
+                    TextButton(enabled = index < parts.size - 1, onClick = { onPart(index + 1) }) { Text("Next →") }
+                }
+            }
+            Text("Tap anywhere to close", color = androidx.compose.ui.graphics.Color.Gray, style = MaterialTheme.typography.bodySmall)
+        }
     }
 }
 

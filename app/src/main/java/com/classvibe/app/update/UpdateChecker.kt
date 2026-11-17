@@ -109,6 +109,24 @@ object UpdateChecker {
 
     private val current: Semver get() = Semver.parse(BuildConfig.VERSION_NAME) ?: Semver(0, 0, 0, "")
 
+    /** True if [tag] is newer than the installed version. */
+    fun isNewer(tag: String): Boolean = Semver.parse(tag)?.let { it > current } ?: false
+
+    /** Release notes are Markdown (from CHANGELOG); show them as clean text with bullets. */
+    fun plainNotes(md: String): String = md.lines()
+        .map { line ->
+            line.trim()
+                .replace(Regex("""^#{1,6}\s*"""), "")
+                .replace(Regex("""^[-*+]\s+"""), "• ")
+                .replace(Regex("""\*\*(.+?)\*\*"""), "$1")
+                .replace(Regex("""__(.+?)__"""), "$1")
+                .replace(Regex("""(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])"""), "$1")
+                .replace(Regex("""`([^`]*)`"""), "$1")
+                .replace(Regex("""\[([^\]]+)]\([^)]+\)"""), "$1")
+        }
+        .fold(mutableListOf<String>()) { acc, l -> if (!(l.isBlank() && (acc.isEmpty() || acc.last().isBlank()))) acc += l; acc }
+        .joinToString("\n").trim()
+
     suspend fun check(context: Context, includePrerelease: Boolean): Result = withContext(Dispatchers.IO) {
         if (!isConfigured) return@withContext Result.NotConfigured
         val failures = mutableListOf<Exception>()

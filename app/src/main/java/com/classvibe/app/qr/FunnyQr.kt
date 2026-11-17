@@ -68,7 +68,11 @@ object FunnyQr {
         paint.color = Color.WHITE
         c.drawRoundRect(plate, 56f, 56f, paint)
 
-        val qr = Encoder.encode(content, ErrorCorrectionLevel.H, mapOf(EncodeHintType.CHARACTER_SET to "UTF-8"))
+        // Small codes: level H with the ⚡ badge. Bigger codes: level M, no badge, square-ish dots –
+        // fewer, larger modules that a phone camera can read off a screen.
+        val hq = Encoder.encode(content, ErrorCorrectionLevel.H, hints(content))
+        val withBadge = hq.matrix.width <= 57   // QR version ≤ 10
+        val qr = if (withBadge) hq else Encoder.encode(content, ErrorCorrectionLevel.M, hints(content))
         val m = qr.matrix
         val n = m.width
         val module = (plate.width() - 80f) / n
@@ -76,7 +80,7 @@ object FunnyQr {
         val oy = plate.top + 40f
 
         // Keep the centre clear for the badge (≈6% of the area – well within level-H recovery).
-        val badge = max(5, (n * 0.22f).toInt()).let { if (it % 2 == n % 2) it else it + 1 }
+        val badge = if (!withBadge) 0 else max(5, (n * 0.22f).toInt()).let { if (it % 2 == n % 2) it else it + 1 }
         val bStart = (n - badge) / 2
         val bEnd = bStart + badge
         fun inEye(x: Int, y: Int) = (x < 7 && y < 7) || (x >= n - 7 && y < 7) || (x < 7 && y >= n - 7)
@@ -85,7 +89,8 @@ object FunnyQr {
         for (y in 0 until n) for (x in 0 until n) {
             if (m.get(x, y).toInt() != 1 || inEye(x, y)) continue
             if (x in bStart until bEnd && y in bStart until bEnd) continue
-            c.drawCircle(ox + (x + 0.5f) * module, oy + (y + 0.5f) * module, module * 0.47f, paint)
+            if (withBadge) c.drawCircle(ox + (x + 0.5f) * module, oy + (y + 0.5f) * module, module * 0.47f, paint)
+            else c.drawRoundRect(RectF(ox + x * module, oy + y * module, ox + (x + 1) * module, oy + (y + 1) * module), module * 0.2f, module * 0.2f, paint)
         }
 
         // Eyes: rounded outer square, white ring, rounded centre (layout verified to decode at 240/240 test images).
@@ -103,6 +108,7 @@ object FunnyQr {
         eye(0, 0); eye(n - 7, 0); eye(0, n - 7)
 
         // ⚡ badge
+        if (withBadge) {
         val cx = ox + n * module / 2
         val cy = oy + n * module / 2
         val r = badge * module / 2f - module * 0.3f
@@ -113,6 +119,7 @@ object FunnyQr {
         paint.textSize = r * 1.15f
         paint.textAlign = Paint.Align.CENTER
         c.drawText("⚡", cx, cy + r * 0.4f, paint)
+        }
 
         // Caption + part label
         paint.color = theme.caption
@@ -124,6 +131,35 @@ object FunnyQr {
         paint.color = theme.title
         val footer = (partLabel?.let { "$it • " } ?: "") + "Scan in ClassVibe → Settings → QR sharing"
         c.drawText(fit(footer, paint, W - 100f), W / 2f, min(H - 60f, plate.bottom + 190f), paint)
+        return bmp
+    }
+
+    /** Alphanumeric-only content (CV2) is encoded in QR alphanumeric mode; anything else as UTF-8. */
+    private fun hints(content: String): Map<EncodeHintType, Any> =
+        if (content.all { it in "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:" }) emptyMap()
+        else mapOf(EncodeHintType.CHARACTER_SET to "UTF-8")
+
+    /**
+     * Plain black-on-white code for showing on screen to another phone's camera:
+     * square modules, level M, a wide quiet zone – the most camera-friendly form.
+     */
+    fun renderPlain(content: String, size: Int = 1080): Bitmap {
+        val m = Encoder.encode(content, ErrorCorrectionLevel.M, hints(content)).matrix
+        val n = m.width
+        val quiet = 4
+        val module = size / (n + 2 * quiet)
+        val px = module * (n + 2 * quiet)
+        val bmp = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
+        bmp.eraseColor(Color.WHITE)
+        val c = Canvas(bmp)
+        val paint = Paint().apply { color = Color.BLACK; isAntiAlias = false }
+        for (y in 0 until n) for (x in 0 until n) {
+            if (m.get(x, y).toInt() == 1) {
+                val l = ((x + quiet) * module).toFloat()
+                val t = ((y + quiet) * module).toFloat()
+                c.drawRect(l, t, l + module, t + module, paint)
+            }
+        }
         return bmp
     }
 

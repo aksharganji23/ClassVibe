@@ -190,6 +190,7 @@ private fun TodayHeader(now: LocalDateTime, todays: List<ClassSchedule>, nowMinu
     ) {
         Column(
             Modifier
+                .fillMaxWidth()
                 .background(Brush.linearGradient(listOf(brand, Color(0xFF1C77C9), Cv.colors.accent.copy(alpha = 0.55f))))
                 .padding(20.dp)
         ) {
@@ -306,7 +307,7 @@ private fun UpdateCard(info: UpdateInfo, progress: Int?, onUpdate: () -> Unit, o
             if (info.title.isNotBlank() && info.title != info.tag) Text(info.title, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
             if (info.notes.isNotBlank()) {
                 Spacer(Modifier.height(6.dp))
-                Text(info.notes.take(300), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSecondaryContainer, maxLines = 6, overflow = TextOverflow.Ellipsis)
+                Text(com.classvibe.app.update.UpdateChecker.plainNotes(info.notes).take(400), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSecondaryContainer, maxLines = 6, overflow = TextOverflow.Ellipsis)
             }
             Spacer(Modifier.height(10.dp))
             if (progress != null) {

@@ -32,6 +32,22 @@ enum class MessageStyle(val label: String, val description: String) {
  * User-edited reminder schedule for one exam type.
  * milestones = "days before" reminders, dailyFinal = daily reminders in the last N days, weekly = every week.
  */
+/** Classes attended / held before the student started marking in ClassVibe. */
+data class AttendanceBaseline(val course: String, val attended: Int, val held: Int) {
+    fun encode() = "$attended|$held|$course"
+
+    companion object {
+        fun decode(s: String): AttendanceBaseline? {
+            val parts = s.split('|', limit = 3)
+            if (parts.size != 3) return null
+            val a = parts[0].toIntOrNull() ?: return null
+            val h = parts[1].toIntOrNull() ?: return null
+            if (h < 0 || a < 0 || a > h || parts[2].isBlank()) return null
+            return AttendanceBaseline(parts[2], a, h)
+        }
+    }
+}
+
 data class ExamSchedule(val milestones: List<Int>, val dailyFinal: Int, val weekly: Boolean) {
     fun encode(): String = milestones.joinToString(",") + ";" + dailyFinal + ";" + (if (weekly) 1 else 0)
 
@@ -66,6 +82,8 @@ data class AppPrefs(
     val disabledExamTypes: Set<String> = emptySet(),
     /** Per exam type (ExamType.name) schedule overrides; missing = built-in default. */
     val examSchedules: Map<String, ExamSchedule> = emptyMap(),
+    /** Attendance from before using ClassVibe, per subject: course → (attended, held). */
+    val attendanceBaseline: Map<String, AttendanceBaseline> = emptyMap(),
     // Weekend prep
     val weekendPrep: Boolean = true,
     val weekendDays: Set<Int> = setOf(6, 7),
@@ -113,6 +131,7 @@ object AppSettings {
         val EXAM_EVENING_TIME = intPreferencesKey("exam_evening_minutes")
         val EXAM_DISABLED_TYPES = stringSetPreferencesKey("exam_disabled_types")
         val EXAM_SCHEDULES = stringSetPreferencesKey("exam_schedules") // entries "TYPE=90,60;7;1"
+        val ATTENDANCE_BASELINE = stringSetPreferencesKey("attendance_baseline") // entries "attended|held|course"
         val CALENDAR_REMINDERS = booleanPreferencesKey("calendar_export_reminders")
         val WEEKEND = booleanPreferencesKey("weekend_prep")
         val WEEKEND_DAYS = stringSetPreferencesKey("weekend_days")
@@ -165,6 +184,8 @@ object AppSettings {
             val type = entry.substringBefore('=', "")
             ExamSchedule.decode(entry.substringAfter('=', ""))?.let { type to it }
         }.toMap(),
+        attendanceBaseline = (p[Keys.ATTENDANCE_BASELINE] ?: emptySet()).mapNotNull { AttendanceBaseline.decode(it) }
+            .associateBy { it.course },
         weekendPrep = p[Keys.WEEKEND] ?: true,
         weekendDays = p[Keys.WEEKEND_DAYS]?.mapNotNull { it.toIntOrNull() }?.toSet() ?: setOf(6, 7),
         weekendMorningMinutes = p[Keys.WEEKEND_MORNING] ?: (10 * 60),
@@ -195,6 +216,13 @@ object AppSettings {
     suspend fun setExamSchedule(context: Context, typeName: String, schedule: ExamSchedule?) = update(context) { p ->
         val others = (p[Keys.EXAM_SCHEDULES] ?: emptySet()).filterNot { it.startsWith("$typeName=") }.toSet()
         p[Keys.EXAM_SCHEDULES] = if (schedule == null) others else others + "$typeName=${schedule.encode()}"
+    }
+
+    /** null = remove the starting numbers for that subject. */
+    suspend fun setAttendanceBaseline(context: Context, course: String, baseline: AttendanceBaseline?) = update(context) { p ->
+        val others = (p[Keys.ATTENDANCE_BASELINE] ?: emptySet())
+            .filterNot { AttendanceBaseline.decode(it)?.course.equals(course, ignoreCase = true) }.toSet()
+        p[Keys.ATTENDANCE_BASELINE] = if (baseline == null || baseline.held == 0) others else others + baseline.encode()
     }
 
     suspend fun addCustomSubject(context: Context, subject: String) {

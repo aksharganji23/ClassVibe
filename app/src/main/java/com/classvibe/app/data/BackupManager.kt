@@ -65,6 +65,7 @@ object BackupManager {
             put("semesterStart", prefs.semesterStartEpochDay ?: JSONObject.NULL)
             put("semesterEnd", prefs.semesterEndEpochDay ?: JSONObject.NULL)
             put("customSubjects", JSONArray(prefs.customSubjects.toList()))
+            put("attendanceBaseline", JSONArray(prefs.attendanceBaseline.values.map { it.encode() }))
             put("messageStyle", prefs.messageStyle.name)
         })
         return root.toString(2)
@@ -146,6 +147,10 @@ object BackupManager {
                 if (!s.isNull("semesterEnd")) p[AppSettings.Keys.SEM_END] = s.getLong("semesterEnd")
                 s.optJSONArray("customSubjects")?.let { arr ->
                     p[AppSettings.Keys.CUSTOM_SUBJECTS] = (0 until arr.length()).map { arr.getString(it) }.toSet()
+                }
+                s.optJSONArray("attendanceBaseline")?.let { arr ->
+                    p[AppSettings.Keys.ATTENDANCE_BASELINE] = (0 until arr.length()).map { arr.getString(it) }
+                        .filter { AttendanceBaseline.decode(it) != null }.toSet()
                 }
                 s.optString("messageStyle").takeIf { it.isNotBlank() }?.let { p[AppSettings.Keys.STYLE] = it }
             }

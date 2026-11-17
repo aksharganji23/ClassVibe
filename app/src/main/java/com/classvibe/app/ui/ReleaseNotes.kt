@@ -2,11 +2,13 @@ package com.classvibe.app.ui
 
 /** Shown once after each update in the "What's new" dialog. Keep in sync with CHANGELOG.md. */
 object ReleaseNotes {
-    const val CURRENT = """🛼 Smooth Operator – updates that just work
+    const val CURRENT = """📋 Roll Call – attendance you can trust
 
-📲 One-tap updates: tap Update → progress bar → Android installs it
-🌐 Update checks now work on busy college Wi-Fi
-🏷️ Every download is named with its version (ClassVibe-v1.3.0.apk)
-💾 A copy of each update is kept in Downloads/ClassVibe
-🎨 The original calendar ⚡ logo is back – now in ClassVibe blue"""
+✏️ Stats → ✏️: enter attendance you already had, fix wrong marks
+⏳ Reminders show the time left + a live countdown
+🔔 Notifications stack instead of replacing each other
+🔳 One QR for everything + full-screen mode for camera scanning
+🔢 QR sharing shows how many classes/exams will be shared
+🧹 Update card hides after updating, cleaner release notes
+🎨 Today card gradient fixed • widget renamed to ClassVibe"""
 }

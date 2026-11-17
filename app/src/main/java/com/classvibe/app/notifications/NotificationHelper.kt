@@ -81,7 +81,13 @@ object NotificationHelper {
         subText: String? = null,
         actions: List<Action> = emptyList(),
         contentIntent: PendingIntent = openAppIntent(context),
-        category: String = NotificationCompat.CATEGORY_REMINDER
+        category: String = NotificationCompat.CATEGORY_REMINDER,
+        /** Shows a live countdown to this moment (epoch millis) in the notification header. */
+        countdownTo: Long? = null,
+        /** Removes the notification automatically after this many millis. */
+        timeoutAfter: Long? = null,
+        /** Notifications in the same group stack together under one ClassVibe header. */
+        group: String? = null
     ) {
         if (!canPostNotifications(context)) return
         val builder = NotificationCompat.Builder(context, channel)
@@ -96,8 +102,36 @@ object NotificationHelper {
             .setContentIntent(contentIntent)
         subText?.let { builder.setSubText(it) }
         actions.forEach { builder.addAction(0, it.title, it.intent) }
-        NotificationManagerCompat.from(context).notify(id, builder.build())
+        if (countdownTo != null && countdownTo > System.currentTimeMillis()) {
+            builder.setWhen(countdownTo).setShowWhen(true).setUsesChronometer(true).setChronometerCountDown(true)
+        }
+        timeoutAfter?.takeIf { it > 0 }?.let { builder.setTimeoutAfter(it) }
+        val manager = NotificationManagerCompat.from(context)
+        if (group != null) {
+            builder.setGroup(group)
+            manager.notify(id, builder.build())
+            // Group summary so the stack folds neatly under one header.
+            val summary = NotificationCompat.Builder(context, channel)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setColor(BRAND)
+                .setContentTitle("ClassVibe")
+                .setGroup(group)
+                .setGroupSummary(true)
+                .setAutoCancel(true)
+                .setContentIntent(contentIntent)
+                .build()
+            manager.notify(group.hashCode(), summary)
+        } else {
+            manager.notify(id, builder.build())
+        }
     }
+
+    const val GROUP_CLASSES = "classvibe_classes"
+    const val GROUP_EXAMS = "classvibe_exams"
+    private var testCounter = 0
+
+    /** A fresh id for each test notification, so tests stack instead of replacing each other. */
+    fun nextTestId(): Int = 450_000 + (testCounter++ % 1000)
 
     fun cancel(context: Context, id: Int) = NotificationManagerCompat.from(context).cancel(id)
 

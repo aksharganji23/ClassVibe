@@ -42,9 +42,54 @@ data class SharePayload(
  */
 object ShareCodec {
 
+    /** v1 (≤ 1.3): Base64 text in QR byte mode. Still readable. */
     const val SINGLE = "CV1:"
     const val PART = "CV1P:"
-    const val CHUNK = 650
+    /**
+     * v2 (1.4+): Base45 in QR *alphanumeric* mode – ~30 % fewer bits than Base64, so
+     * a whole timetable + exams fits in one QR with bigger, camera-friendly modules.
+     */
+    const val SINGLE2 = "CV2:"
+    const val PART2 = "CV2P:"
+    /** Max Base45 characters in one QR before splitting (≈ QR version 25 at level M). */
+    const val CHUNK = 1700
+
+    // ---- Base45 (RFC 9285): 2 bytes → 3 chars from the QR alphanumeric alphabet.
+    private const val B45 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:"
+
+    fun base45Encode(bytes: ByteArray): String = buildString {
+        var i = 0
+        while (i + 1 < bytes.size) {
+            val v = (bytes[i].toInt() and 0xFF) * 256 + (bytes[i + 1].toInt() and 0xFF)
+            append(B45[v % 45]); append(B45[(v / 45) % 45]); append(B45[v / 2025])
+            i += 2
+        }
+        if (i < bytes.size) {
+            val v = bytes[i].toInt() and 0xFF
+            append(B45[v % 45]); append(B45[v / 45])
+        }
+    }
+
+    fun base45Decode(text: String): ByteArray {
+        val out = ByteArrayOutputStream()
+        var i = 0
+        fun d(ch: Char): Int = B45.indexOf(ch).also { require(it >= 0) { "Damaged QR code." } }
+        while (i < text.length) {
+            if (i + 2 < text.length) {
+                val v = d(text[i]) + d(text[i + 1]) * 45 + d(text[i + 2]) * 2025
+                require(v <= 0xFFFF) { "Damaged QR code." }
+                out.write(v shr 8); out.write(v and 0xFF)
+                i += 3
+            } else {
+                require(i + 1 < text.length) { "Damaged QR code." }
+                val v = d(text[i]) + d(text[i + 1]) * 45
+                require(v <= 0xFF) { "Damaged QR code." }
+                out.write(v)
+                i += 2
+            }
+        }
+        return out.toByteArray()
+    }
 
     private fun clean(s: String) = s.replace('\t', ' ').replace('\n', ' ').replace('\r', ' ').trim()
 
@@ -112,23 +157,27 @@ object ShareCodec {
         return out.toByteArray()
     }
 
-    fun encode(p: SharePayload): String =
-        SINGLE + Base64.getUrlEncoder().withoutPadding().encodeToString(deflate(toText(p).toByteArray(Charsets.UTF_8)))
+    fun encode(p: SharePayload): String = SINGLE2 + base45Encode(deflate(toText(p).toByteArray(Charsets.UTF_8)))
 
     fun decode(encoded: String): SharePayload {
-        require(encoded.startsWith(SINGLE)) { "Not a ClassVibe QR code." }
-        val bytes = Base64.getUrlDecoder().decode(encoded.removePrefix(SINGLE).trim())
+        val bytes = when {
+            encoded.startsWith(SINGLE2) -> base45Decode(encoded.removePrefix(SINGLE2).trimEnd('\n', '\r'))
+            encoded.startsWith(SINGLE) -> Base64.getUrlDecoder().decode(encoded.removePrefix(SINGLE).trim())
+            else -> throw IllegalArgumentException("Not a ClassVibe QR code.")
+        }
         return fromText(String(inflate(bytes), Charsets.UTF_8))
     }
 
-    /** One QR string, or several numbered parts when the data is big. */
+    /** One QR string – or, only for very big selections, several numbered parts. */
     fun parts(p: SharePayload, chunk: Int = CHUNK): List<String> {
         val full = encode(p)
-        if (full.length <= chunk) return listOf(full)
-        val body = full.removePrefix(SINGLE)
-        val pieces = body.chunked(chunk)
-        val id = (1..4).map { "abcdefghjkmnpqrstuvwxyz23456789"[Random.nextInt(31)] }.joinToString("")
-        return pieces.mapIndexed { i, piece -> "$PART$id:${i + 1}/${pieces.size}:$piece" }
+        if (full.length <= chunk + SINGLE2.length) return listOf(full)
+        val body = full.removePrefix(SINGLE2)
+        val count = (body.length + chunk - 1) / chunk
+        val size = (body.length + count - 1) / count   // even parts
+        val pieces = body.chunked(size)
+        val id = (1..4).map { "ABCDEFGHJKMNPQRSTUVWXYZ23456789"[Random.nextInt(31)] }.joinToString("")
+        return pieces.mapIndexed { i, piece -> "$PART2$id:${i + 1}/${pieces.size}:$piece" }
     }
 
     sealed class Scan {
@@ -146,12 +195,14 @@ object ShareCodec {
         fun reset() { id = null; total = 0; pieces.clear() }
 
         fun add(raw: String): Scan {
-            val text = raw.trim()
+            // Base45 may legitimately end with a space, so only trim line breaks at the end.
+            val text = raw.trimStart().trimEnd('\n', '\r')
             return try {
                 when {
-                    text.startsWith(SINGLE) -> Scan.Complete(decode(text)).also { reset() }
-                    text.startsWith(PART) -> {
-                        val rest = text.removePrefix(PART)
+                    text.startsWith(SINGLE) || text.startsWith(SINGLE2) -> Scan.Complete(decode(text)).also { reset() }
+                    text.startsWith(PART) || text.startsWith(PART2) -> {
+                        val v2 = text.startsWith(PART2)
+                        val rest = text.removePrefix(if (v2) PART2 else PART)
                         val pid = rest.substringBefore(':')
                         val counter = rest.substringAfter(':').substringBefore(':')
                         val chunk = rest.substringAfter(':').substringAfter(':')
@@ -161,7 +212,7 @@ object ShareCodec {
                         pieces[index] = chunk
                         if (pieces.size == total) {
                             val joined = (1..total).joinToString("") { pieces[it] ?: "" }
-                            Scan.Complete(decode(SINGLE + joined)).also { reset() }
+                            Scan.Complete(decode((if (v2) SINGLE2 else SINGLE) + joined)).also { reset() }
                         } else Scan.Partial(pieces.size, total)
                     }
                     else -> Scan.Invalid("This QR code isn't from ClassVibe.")

@@ -59,7 +59,7 @@ fun BunkPlannerSection(
     today: LocalDate,
     startExpanded: Boolean
 ) {
-    val counts = remember(attendance) { BunkMath.countsFrom(attendance) }
+    val counts = remember(attendance, prefs.attendanceBaseline) { BunkMath.countsFrom(attendance, prefs.attendanceBaseline) }
     val marks = remember(attendance) { attendance.associateBy { "${it.classId}|${it.epochDay}" } }
     val isActive: (ClassSchedule, LocalDate) -> Boolean = { c, d ->
         ClassCalendar.isActive(c, d, prefs, holidays, marks["${c.id}|${d.toEpochDay()}"])

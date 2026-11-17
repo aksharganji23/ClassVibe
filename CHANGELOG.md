@@ -3,6 +3,21 @@
 All notable changes to ClassVibe. Versions follow `MAJOR.MINOR.PATCH`.
 The release workflow copies the section for each tag into the GitHub Release notes.
 
+## [1.4.0] – Roll Call 📋
+
+### Added
+- **Edit attendance per subject** (Stats → ✏️): enter classes attended/held before using the app, and fix or remove single ✅/❌ marks. Every timetable subject now has a card.
+- **Time left in class reminders** – titles like "⏳ In 57 min: Algorithms", a live countdown in the notification, and it disappears when the class ends.
+- **Full-screen QR** – "📱 Show to scan" shows a plain, bright code that another phone's camera reads easily.
+- QR sharing shows **counts** next to each item (e.g. "23 classes", "none") and explains exactly why there's nothing to share.
+
+### Changed
+- **One QR for everything** – a new compact format (Base45, QR alphanumeric mode) fits a full timetable + exams in a single, less dense code. Parts are used only for very big selections. Old ClassVibe QR codes still import.
+- **Notifications stack** instead of replacing each other (test reminders too), grouped under ClassVibe.
+- "Update available" disappears once that version is installed; release notes show as clean text.
+- The "Today's classes" card's gradient fills the whole card.
+- Home-screen widget is now just called "ClassVibe".
+
 ## [1.3.0] – Smooth Operator 🛼
 
 ### Added

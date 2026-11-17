@@ -93,6 +93,9 @@ interface AttendanceDao {
 
     @Query("DELETE FROM attendance")
     suspend fun deleteAll()
+
+    @Query("DELETE FROM attendance WHERE id = :id")
+    suspend fun deleteById(id: Long)
 }
 
 @Dao

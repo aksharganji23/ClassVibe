@@ -272,6 +272,7 @@ Share the same Releases link with classmates. From now on they never need to dow
    - **Import exams from CSV**.
 4. **Stats:**
    - **🧮 Bunk planner**: attendance % calculator, "can I skip N classes?", day planner, safe days;
+   - **✏️ on a subject**: enter attendance you already had before ClassVibe, or fix a wrong ✅/❌;
    - attendance % per subject, streak, weekly hours and busiest day.
 
 **Settings (⚙️):**
@@ -308,7 +309,9 @@ After every release, the Release workflow restarts **Deploy website**, which wri
 
 ## Part N: Sharing with QR codes
 
-**Share:** ⚙️ → **🔳 QR sharing → Share**. Tick what to send (classes for some or all days, exams by type, holidays, semester dates, subjects; attendance is off by default), pick a funny theme and caption, then **Share** or **Save**. Big timetables are split into parts (1/2, 2/2…).
+**Share:** ⚙️ → **🔳 QR sharing → Share**. Tick what to send (classes for some or all days, exams by type, holidays, semester dates, subjects; attendance is off by default), pick a funny theme and caption, then **Share** or **Save**. Each item shows how much it contains (e.g. "23 classes", "none"). Everything normally fits in **one QR**; only very big selections are split into parts.
+- To let a friend scan **with their camera**, tap **📱 Show to scan** – a plain, bright, full-screen code. Share / Save keep the funny design.
+- Friends need ClassVibe **1.4 or newer** to scan codes made in 1.4+.
 
 **Scan:** **🔳 QR sharing → Scan** → camera or a saved image. ClassVibe shows what will be added:
 - items you already have are **never changed**;

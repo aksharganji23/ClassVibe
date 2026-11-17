@@ -93,7 +93,16 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val prefs: StateFlow<AppPrefs?> = AppSettings.flow(app).state<AppPrefs?>(null)
 
     val availableUpdate: StateFlow<UpdateInfo?> = AppSettings.rawFlow(app)
-        .map { UpdateInfo.fromJson(it[AppSettings.Keys.AVAILABLE_UPDATE]) }
+        .map { raw ->
+            // Hide (and forget) an update that is already installed – e.g. right after updating.
+            UpdateInfo.fromJson(raw[AppSettings.Keys.AVAILABLE_UPDATE])?.takeIf { UpdateChecker.isNewer(it.tag) }
+                ?: run {
+                    if (!raw[AppSettings.Keys.AVAILABLE_UPDATE].isNullOrEmpty()) {
+                        viewModelScope.launch { AppSettings.update(app) { it[AppSettings.Keys.AVAILABLE_UPDATE] = "" } }
+                    }
+                    null
+                }
+        }
         .state<UpdateInfo?>(null)
 
     /** Ticks every 30 s so status badges and progress bars stay live. */
@@ -220,6 +229,19 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun clearTimetable() = io { repo.clearTimetable(); toast("Timetable cleared") }
 
+    /** Stats → ✏️ Edit: attendance from before using the app. held = 0 removes it. */
+    fun setAttendanceBaseline(course: String, attended: Int, held: Int) = io {
+        val b = if (held <= 0) null else com.classvibe.app.data.AttendanceBaseline(course, attended.coerceIn(0, held), held)
+        AppSettings.setAttendanceBaseline(context, course, b)
+        toast(if (b == null) "Starting numbers removed" else "Saved: ${b.attended}/${b.held} before ClassVibe 👍")
+    }
+
+    /** Fix a single mark: change ✅ ↔ ❌ (or 🚫), or remove it (status = null). */
+    fun fixMark(record: com.classvibe.app.data.AttendanceRecord, status: AttendanceStatus?) = io {
+        val dao = com.classvibe.app.data.AppDatabase.get(context).attendanceDao()
+        if (status == null) dao.deleteById(record.id) else dao.upsert(record.copy(status = status.name))
+    }
+
     fun mark(c: ClassSchedule, date: LocalDate, status: AttendanceStatus?) = io {
         repo.mark(c, date, status)
         when (status) {
@@ -296,10 +318,22 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             )
         val lead = p.leadMinutes.filter { it > 0 }.minOrNull() ?: 10
         val todays = all.filter { it.dayOfWeek == today.dayOfWeek.value }.sortedBy { it.startMinutes }
-        val built = ReminderContent.classReminder(context, target, lead, today, p, todays, attendance.value)
+        // Minutes until this class's next start (0 if it's on right now).
+        val ahead = (target.dayOfWeek - today.dayOfWeek.value + 7) % 7
+        val minutesLeft = when {
+            ahead == 0 && nowMin in target.startMinutes until target.endMinutes -> 0
+            ahead == 0 && target.startMinutes > nowMin -> target.startMinutes - nowMin
+            else -> (if (ahead == 0) 7 else ahead) * 1440 + target.startMinutes - nowMin
+        }
+        val built = ReminderContent.classReminder(context, target, lead, today, p, todays, attendance.value, minutesLeft)
+        val startAt = System.currentTimeMillis() + minutesLeft * 60_000L
         NotificationHelper.post(
-            context, NotificationHelper.classId(target.id), NotificationHelper.CH_CLASSES,
-            "🧪 Test • " + built.title, built.body, built.bigText
+            context, NotificationHelper.nextTestId(), NotificationHelper.CH_CLASSES,
+            "🧪 Test • " + built.title, built.body, built.bigText,
+            subText = if (minutesLeft > 0) "${target.classType} • ${target.startTimeText} • in ${ReminderContent.leftText(minutesLeft)}" else "${target.classType} • now",
+            actions = com.classvibe.app.notifications.RateActionReceiver.actions(context, built.messageId),
+            countdownTo = if (minutesLeft in 1..(24 * 60)) startAt else null,
+            group = NotificationHelper.GROUP_CLASSES
         )
         toast("Test reminder sent for ${target.course} (${target.dayName} ${target.startTimeText}) 🔔")
     }

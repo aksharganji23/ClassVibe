@@ -19,21 +19,30 @@ data class CourseAttendance(val course: String, val attended: Int, val missed: I
 
 object AttendanceStats {
 
-    fun byCourse(records: List<AttendanceRecord>): List<CourseAttendance> =
-        records.groupBy { it.course }.map { (course, list) ->
+    /**
+     * Per-subject attendance. [baseline] adds the classes attended/held before the student
+     * started marking in ClassVibe (Stats → ✏️ Edit), so percentages start from real numbers.
+     */
+    fun byCourse(records: List<AttendanceRecord>, baseline: Map<String, AttendanceBaseline> = emptyMap()): List<CourseAttendance> {
+        val grouped = records.groupBy { it.course }
+        val courses = (grouped.keys + baseline.keys).toSet()
+        return courses.map { course ->
+            val list = grouped[course].orEmpty()
+            val b = baseline[course]
             CourseAttendance(
                 course = course,
-                attended = list.count { it.attendanceStatus == AttendanceStatus.ATTENDED },
-                missed = list.count { it.attendanceStatus == AttendanceStatus.MISSED },
+                attended = list.count { it.attendanceStatus == AttendanceStatus.ATTENDED } + (b?.attended ?: 0),
+                missed = list.count { it.attendanceStatus == AttendanceStatus.MISSED } + (b?.let { it.held - it.attended } ?: 0),
                 cancelled = list.count { it.attendanceStatus == AttendanceStatus.CANCELLED }
             )
         }.sortedBy { it.percent }
+    }
 
-    fun overall(records: List<AttendanceRecord>): CourseAttendance =
+    fun overall(records: List<AttendanceRecord>, baseline: Map<String, AttendanceBaseline> = emptyMap()): CourseAttendance =
         CourseAttendance(
             course = "Overall",
-            attended = records.count { it.attendanceStatus == AttendanceStatus.ATTENDED },
-            missed = records.count { it.attendanceStatus == AttendanceStatus.MISSED },
+            attended = records.count { it.attendanceStatus == AttendanceStatus.ATTENDED } + baseline.values.sumOf { it.attended },
+            missed = records.count { it.attendanceStatus == AttendanceStatus.MISSED } + baseline.values.sumOf { it.held - it.attended },
             cancelled = records.count { it.attendanceStatus == AttendanceStatus.CANCELLED }
         )
 

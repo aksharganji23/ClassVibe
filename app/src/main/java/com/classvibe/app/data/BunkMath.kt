@@ -87,6 +87,6 @@ object BunkMath {
         .map { planDay(it, classes, counts, target, isActive) }
         .filter { it.isSafe }
 
-    fun countsFrom(records: List<AttendanceRecord>): Map<String, Counts> =
-        AttendanceStats.byCourse(records).associate { it.course to Counts(it.attended, it.total) }
+    fun countsFrom(records: List<AttendanceRecord>, baseline: Map<String, AttendanceBaseline> = emptyMap()): Map<String, Counts> =
+        AttendanceStats.byCourse(records, baseline).associate { it.course to Counts(it.attended, it.total) }
 }

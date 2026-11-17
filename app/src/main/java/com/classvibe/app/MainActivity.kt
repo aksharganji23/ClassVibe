@@ -387,7 +387,9 @@ private fun MainScaffold(vm: AppViewModel, prefs: AppPrefs, requestedTab: Mutabl
                         )
                         AppTab.STATS -> StatsScreen(
                             classes = classes, attendance = attendance, holidays = holidays, prefs = prefs,
-                            today = now.toLocalDate(), openBunkPlanner = openBunk
+                            today = now.toLocalDate(), openBunkPlanner = openBunk,
+                            onSetBaseline = { c, a, h -> vm.setAttendanceBaseline(c, a, h) },
+                            onFixMark = { r, st -> vm.fixMark(r, st) }
                         )
                     }
                 }

@@ -66,13 +66,22 @@ class ClassReminderWorker(context: Context, params: WorkerParameters) : Coroutin
         if (date != null && prefs.remindersEnabled && lead in prefs.leadMinutes) {
             val todays = activeClassesOn(date, prefs)
             if (todays.any { it.id == c.id }) {
+                val zone = java.time.ZoneId.systemDefault()
+                val startAt = date.atStartOfDay(zone).plusMinutes(c.startMinutes.toLong()).toInstant().toEpochMilli()
+                val endAt = date.atStartOfDay(zone).plusMinutes(c.endMinutes.toLong()).toInstant().toEpochMilli()
+                val nowMs = System.currentTimeMillis()
+                val minutesLeft = Math.ceil((startAt - nowMs) / 60_000.0).toInt().coerceAtLeast(0)
                 val built = ReminderContent.classReminder(
-                    applicationContext, c, lead, date, prefs, todays, db.attendanceDao().getAll()
+                    applicationContext, c, lead, date, prefs, todays, db.attendanceDao().getAll(), minutesLeft
                 )
                 NotificationHelper.post(
                     applicationContext, NotificationHelper.classId(c.id), NotificationHelper.CH_CLASSES,
-                    built.title, built.body, built.bigText, subText = "${c.classType} • ${c.startTimeText}",
-                    actions = RateActionReceiver.actions(applicationContext, built.messageId)
+                    built.title, built.body, built.bigText,
+                    subText = if (minutesLeft > 0) "${c.classType} • ${c.startTimeText} • in ${ReminderContent.leftText(minutesLeft)}" else "${c.classType} • now",
+                    actions = RateActionReceiver.actions(applicationContext, built.messageId),
+                    countdownTo = startAt,
+                    timeoutAfter = endAt - nowMs,
+                    group = NotificationHelper.GROUP_CLASSES
                 )
             }
         }
@@ -95,7 +104,8 @@ class ClassReminderWorker(context: Context, params: WorkerParameters) : Coroutin
                     actions = listOf(
                         NotificationHelper.Action("✅ Attended", AttendanceActionReceiver.intent(applicationContext, c.id, c.course, epochDay, AttendanceStatus.ATTENDED, notifId)),
                         NotificationHelper.Action("❌ Missed", AttendanceActionReceiver.intent(applicationContext, c.id, c.course, epochDay, AttendanceStatus.MISSED, notifId))
-                    )
+                    ),
+                    group = NotificationHelper.GROUP_CLASSES
                 )
             }
         }
@@ -111,7 +121,8 @@ class ClassReminderWorker(context: Context, params: WorkerParameters) : Coroutin
                     applicationContext, NotificationHelper.examId(exam.id), NotificationHelper.CH_EXAMS,
                     built.title, built.body, built.bigText, subText = exam.typeLabel,
                     actions = RateActionReceiver.actions(applicationContext, built.messageId),
-                    contentIntent = NotificationHelper.openAppIntent(applicationContext, tab = 2)
+                    contentIntent = NotificationHelper.openAppIntent(applicationContext, tab = 2),
+                    group = NotificationHelper.GROUP_EXAMS
                 )
             }
         }
