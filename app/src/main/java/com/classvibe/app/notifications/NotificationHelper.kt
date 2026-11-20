@@ -32,6 +32,7 @@ object NotificationHelper {
     fun classId(id: Long) = 100_000 + (id % 90_000).toInt()
     fun classEndId(id: Long) = 200_000 + (id % 90_000).toInt()
     fun examId(id: Long) = 300_000 + (id % 90_000).toInt()
+    fun trainingId(id: Long) = 500_000 + (id % 90_000).toInt()
 
     private const val BRAND = 0xFF0055A4.toInt()
 
@@ -129,6 +130,7 @@ object NotificationHelper {
     const val GROUP_CLASSES = "classvibe_classes"
     const val GROUP_EXAMS = "classvibe_exams"
     const val GROUP_TESTS = "classvibe_tests"
+    const val GROUP_TRAINING = "classvibe_training"
     private var testCounter = 0
 
     /** A fresh id for each test notification, so tests stack instead of replacing each other. */

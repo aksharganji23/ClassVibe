@@ -34,7 +34,16 @@ Requires **Android 8.0+**. Free.
 4. If Play Protect warns about an unknown developer: **More details → Install anyway**.
 5. Open ClassVibe → import your timetable → done. 🎉
 
-**Updates:** ClassVibe tells you when a new version is out – tap **Update** and it installs itself. Your data is kept.
+**Updates:** ClassVibe tells you when a new version is out. Tap **Update** → it downloads and safety-checks the file → tap **Open Downloads** → tap the APK → **Update**. Your data is kept.
+
+### Can't install?
+
+- **"App not installed" / "Something went wrong"** – uninstall any older ClassVibe first (Settings → Apps), then install again.
+- Open the APK from the **Files** app (Downloads), not from the browser's download bar.
+- **Play Protect "Harmful app blocked"** – use v1.7.0 or newer (no install permission). If it still warns: **More details → Install anyway**.
+- **Xiaomi / Vivo / Oppo / Realme** – their own "security scan" or "install safety" can block apps from outside their store; allow it or switch it off just while installing.
+- Keep **~100 MB free** storage.
+- Needs **Android 8.0 or newer**.
 
 ## Tips for reliable reminders
 

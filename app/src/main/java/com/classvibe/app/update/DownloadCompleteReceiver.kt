@@ -1,7 +1,6 @@
 package com.classvibe.app.update
 
 import android.app.DownloadManager
-import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -27,23 +26,18 @@ class DownloadCompleteReceiver : BroadcastReceiver() {
                 val problem = UpdateChecker.verify(context, info)
                 if (problem == null) {
                     val file = UpdateChecker.downloadedFile(context, info)
-                    UpdateInstaller.saveBackupCopy(context, file, info.apkName)
-                    if (UpdateInstaller.canInstall(context)) {
-                        UpdateInstaller.install(context, file, info.tag)
-                    } else {
-                        val allow = PendingIntent.getActivity(
-                            context, 77,
-                            Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, android.net.Uri.parse("package:${context.packageName}"))
-                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                            PendingIntent.FLAG_IMMUTABLE
-                        )
-                        NotificationHelper.post(
-                            context, NotificationHelper.ID_UPDATE, NotificationHelper.CH_UPDATES,
-                            "✅ ClassVibe ${info.tag} downloaded & verified",
-                            "Tap to allow ClassVibe to install updates, then tap Update in the app again.",
-                            contentIntent = allow
-                        )
-                    }
+                    // ClassVibe doesn't install apps itself (that's what Play Protect blocks) –
+                    // it puts the verified file in Downloads/ClassVibe and Android's installer does the rest.
+                    val saved = UpdateFiles.saveToDownloads(context, file, info.apkName)
+                    NotificationHelper.post(
+                        context, NotificationHelper.ID_UPDATE, NotificationHelper.CH_UPDATES,
+                        "✅ ClassVibe ${info.tag} is ready to install",
+                        "Tap → open ${info.apkName} in ${UpdateFiles.whereIsIt()} → Update.",
+                        bigText = "Downloaded and safety-checked ✔️\n\nTap here, then tap ${info.apkName} " +
+                            "(in ${UpdateFiles.whereIsIt()}) and press Update. Your timetable and settings stay as they are." +
+                            (if (saved == null) "" else "\n\nIf Android asks, allow your Files app to install apps – only once."),
+                        contentIntent = UpdateChecker.downloadsIntent(context)
+                    )
                 } else {
                     val dm = context.getSystemService(DownloadManager::class.java)
                     dm.remove(id)

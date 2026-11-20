@@ -156,7 +156,7 @@ Share the same Releases link with classmates. From now on they never need to dow
 | When | What happens |
 |---|---|
 | App opens | Checks for updates (at most once per 10 min) |
-| Every ~8 hours (3× a day) | Background check, only on a network, and only if "Check for updates" is on |
+| Every ~6 hours | Background check, only on a network, and only if "Check for updates" is on |
 | Settings → "Check for updates now" | Manual check |
 
 **Where the app looks (in this order):**
@@ -165,12 +165,14 @@ Share the same Releases link with classmates. From now on they never need to dow
 3. The GitHub API (limited to 60 checks per hour per network; a 403 shows "Too many update checks from this network – try mobile data").
 
 **When a newer release exists:**
-1. A **"🚀 Update available"** card appears on Today, plus a notification.
-2. The user taps **Update**. The very first time, Android asks to allow **Install unknown apps** for ClassVibe (switch it on, come back, the update starts by itself).
-3. The card shows download progress. ClassVibe **verifies the SHA-256 checksum** and that the APK is **signed with your key**; if either fails, the file is deleted and the user is warned.
-4. Android's **"Update this app?"** box appears → tap **Update**. On Android 12+ later updates usually install with **no tap at all**.
-5. Android restarts the app; a **"✅ ClassVibe updated – tap to open"** notification appears. All data is kept.
-6. A copy of the APK is kept in **Downloads/ClassVibe/** (e.g. `ClassVibe-v1.3.0.apk`) in case you need to install it by hand.
+1. A **"🚀 Update available"** card appears on Today, plus **one** notification per version with an **⬇️ Update now** button (no repeated nagging).
+2. The user taps **Update** (or **Update now** in the notification). The card shows download progress.
+3. ClassVibe **verifies the SHA-256 checksum** and that the APK is **signed with your key**; if either fails, the file is deleted and the user is warned.
+4. The verified file is saved to **Downloads/ClassVibe/** (e.g. `ClassVibe-v1.7.0.apk`) and a **"✅ Ready to install"** notification appears.
+5. Tap the notification (or **📂 Open Downloads** on the card) → tap the APK → **Update**. The first time, Android may ask to allow **Install unknown apps** for the Files app – the same switch used for the very first install.
+6. A **"✅ ClassVibe updated – tap to open"** notification appears. All data is kept.
+
+> **Why not a fully automatic install?** Up to v1.5.0 ClassVibe installed its own updates (the *Install unknown apps* permission + Android's PackageInstaller). Google Play Protect treats sideloaded apps that can install other apps as risky and showed **"Harmful app blocked"**. From v1.7.0 ClassVibe has **no install permission at all**; Android's own installer does the job.
 
 **Also:**
 - **Later** hides the card for now; **Skip version** ignores that version.
@@ -217,7 +219,7 @@ Share the same Releases link with classmates. From now on they never need to dow
 
 **What ClassVibe already does to pass scans:**
 - **Minimal permissions:** notifications, alarms, boot, wake lock, vibrate, and network for updates only.
-- **Few permissions:** no SMS, contacts, location, camera, storage, accessibility or overlay permission. The only special one is **Install unknown apps**, used only to install ClassVibe's own verified updates. Play Protect may mention it on first install; that's expected for apps that update themselves.
+- **Few permissions:** no SMS, contacts, location, camera, storage, accessibility or overlay permission, and (since v1.7.0) **no "Install unknown apps" permission** – updates are installed by Android's own installer from Downloads/ClassVibe.
 - **No ads, analytics or tracking SDKs;** no cleartext HTTP; immutable PendingIntents; non-exported internal receivers.
 - **Release builds** are minified, not debuggable, signed with your key and verified on update.
 
@@ -226,7 +228,12 @@ Share the same Releases link with classmates. From now on they never need to dow
 2. Run a **MobSF** static scan (MobSF is open source; you can run it with Docker).
 3. Install it on a phone with Play Protect on, then go to **Play Store → Profile → Play Protect → Scan**.
 
-**If Play Protect still warns:** choose **Scan app**. You can also submit the APK through Google's Play Protect appeal form ("Submit an app to Google Play Protect for review").
+**If Play Protect still says "Harmful app blocked" (appeal):**
+1. Make sure the APK is a v1.7.0+ build from GitHub Actions (older builds had the install permission that triggered the block).
+2. Open Google's form **"Submit an app to Google Play Protect for review"** (search that title; it's on support.google.com under *Google Play Protect*).
+3. Fill in: app name **ClassVibe**, package **com.classvibe.app**, the download link (your Releases page), and the **SHA-256** – copy it from the `ClassVibe-vX.Y.Z.apk.sha256` file attached to the release.
+4. Explain briefly: *"Open-source student timetable app (github.com/aksharganji23/ClassVibe). Offline, no ads/trackers, no install permission. Only permissions: notifications, exact alarms, boot, internet for update checks."*
+5. Reviews usually take a few days. Until then users can tap **More details → Install anyway** on the warning (or turn off *Scan apps with Play Protect* only while installing).
 
 **Developer verification (timeline):**
 - **Where it stands:** Google's developer verification for sideloaded apps started on **30 September 2026** in Brazil, Indonesia, Singapore and Thailand.
@@ -241,6 +248,8 @@ Share the same Releases link with classmates. From now on they never need to dow
 |---|---|
 | Build workflow red | Copy the `e:` lines from Actions and send them to Claude |
 | "App not installed" / "package conflicts" | Uninstall the old version (v1.0, or one signed with a different key), then install again |
+| "Something went wrong / Can't install" on a friend's phone | Old ClassVibe installed from a different build → uninstall it; open the APK from the **Files** app (not the browser bar); free 100 MB storage; allow "Install unknown apps" for Files; turn off the brand's extra security scan (Xiaomi "Security", Vivo/Oppo "Install safety") while installing; the phone must be Android 8.0+ |
+| Play Protect "Harmful app blocked" | Install v1.7.0 or newer; see Part J → appeal |
 | Release workflow: "Missing KEYSTORE_BASE64" | Add the secrets (Part D3) |
 | Update says "Signature mismatch" | That APK was signed with a different key; always release through GitHub Actions |
 | Update says "no .sha256 file" | The release was uploaded by hand; use the tag workflow instead |

@@ -344,14 +344,34 @@ object UpdateChecker {
         context.startActivity(Intent(DownloadManager.ACTION_VIEW_DOWNLOADS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
 
-    fun notifyAvailable(context: Context, info: UpdateInfo) {
+    fun downloadsIntent(context: Context): android.app.PendingIntent = android.app.PendingIntent.getActivity(
+        context, 78,
+        Intent(DownloadManager.ACTION_VIEW_DOWNLOADS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+        android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT
+    )
+
+    /**
+     * "🚀 New version" notification with an "⬇️ Update now" button.
+     * Posted only once per version (unless [force]), so it doesn't nag every few hours.
+     */
+    suspend fun notifyAvailable(context: Context, info: UpdateInfo, force: Boolean = false) {
+        val raw = AppSettings.raw(context)
+        if (!force && raw[AppSettings.Keys.NOTIFIED_UPDATE] == info.tag) return
+        AppSettings.update(context) { it[AppSettings.Keys.NOTIFIED_UPDATE] = info.tag }
+        val notes = plainNotes(info.notes).take(400)
+        val updateNow = android.app.PendingIntent.getBroadcast(
+            context, 79,
+            Intent(context, UpdateActionReceiver::class.java).setAction(UpdateActionReceiver.ACTION_UPDATE_NOW),
+            android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT
+        )
         NotificationHelper.post(
             context, NotificationHelper.ID_UPDATE, NotificationHelper.CH_UPDATES,
             "🚀 ClassVibe ${info.tag} is available",
-            info.title,
-            bigText = info.title + "\n\n" + info.notes.take(400),
+            info.title.ifBlank { "Tap Update now to download it" },
+            bigText = info.title + (if (notes.isNotBlank()) "\n\n$notes" else ""),
             contentIntent = NotificationHelper.openAppIntent(context, tab = 0),
-            category = androidx.core.app.NotificationCompat.CATEGORY_RECOMMENDATION
+            category = androidx.core.app.NotificationCompat.CATEGORY_RECOMMENDATION,
+            actions = listOf(NotificationHelper.Action("⬇️ Update now", updateNow))
         )
     }
 }

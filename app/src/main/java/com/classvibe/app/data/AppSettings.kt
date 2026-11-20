@@ -72,6 +72,13 @@ data class AppPrefs(
     val dockTransparency: Int = 30,
     // Class reminders
     val remindersEnabled: Boolean = true,
+    /** Placement training: tab + reminders (asked once). */
+    val trainingEnabled: Boolean = false,
+    val trainingAsked: Boolean = false,
+    /** Evening-before reminder time (minutes of day), -1 = off. */
+    val trainingEveningMinutes: Int = 20 * 60,
+    /** Minutes before the training starts, 0 = off. */
+    val trainingLeadMinutes: Int = 60,
     val leadMinutes: Set<Int> = setOf(10),
     val classEndNudge: Boolean = true,
     val morningSummary: Boolean = true,
@@ -124,6 +131,11 @@ object AppSettings {
         val THEME = stringPreferencesKey("theme_mode")
         val DOCK_TRANSPARENCY = intPreferencesKey("dock_transparency")
         val REMINDERS = booleanPreferencesKey("reminders_enabled")
+        val TRAINING = booleanPreferencesKey("training_enabled")
+        val TRAINING_ASKED = booleanPreferencesKey("training_asked")
+        val TRAINING_EVENING = intPreferencesKey("training_evening_minutes")
+        val TRAINING_LEAD = intPreferencesKey("training_lead_minutes")
+        val NOTIFIED_UPDATE = stringPreferencesKey("notified_update_tag")
         val LEADS = stringSetPreferencesKey("reminder_leads")
         val CLASS_END = booleanPreferencesKey("class_end_nudge")
         val MORNING = booleanPreferencesKey("morning_summary")
@@ -175,6 +187,10 @@ object AppSettings {
         themeMode = p[Keys.THEME]?.let { v -> ThemeMode.entries.firstOrNull { it.name == v } } ?: ThemeMode.UNSET,
         dockTransparency = (p[Keys.DOCK_TRANSPARENCY] ?: 30).coerceIn(0, 85),
         remindersEnabled = p[Keys.REMINDERS] ?: true,
+        trainingEnabled = p[Keys.TRAINING] ?: false,
+        trainingAsked = p[Keys.TRAINING_ASKED] ?: false,
+        trainingEveningMinutes = p[Keys.TRAINING_EVENING] ?: (20 * 60),
+        trainingLeadMinutes = p[Keys.TRAINING_LEAD] ?: 60,
         leadMinutes = p[Keys.LEADS]?.mapNotNull { it.toIntOrNull() }?.toSet() ?: setOf(10),
         classEndNudge = p[Keys.CLASS_END] ?: true,
         morningSummary = p[Keys.MORNING] ?: true,

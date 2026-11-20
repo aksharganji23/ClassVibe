@@ -122,8 +122,10 @@ fun ExamsScreen(
         onImportCsv(text)
     }
 
-    val upcoming = exams.filter { !it.date.isBefore(today) }.sortedWith(compareBy({ it.epochDay }, { it.timeMinutes }))
-    val past = exams.filter { it.date.isBefore(today) }.sortedByDescending { it.epochDay }
+    val nowTime = java.time.LocalDateTime.now()
+    // An exam moves to "past" once its end time (start + duration) has passed.
+    val upcoming = exams.filter { !it.isOver(nowTime) }.sortedWith(compareBy({ it.epochDay }, { it.timeMinutes }))
+    val past = exams.filter { it.isOver(nowTime) }.sortedByDescending { it.epochDay * 10_000 + it.timeMinutes }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -224,6 +226,8 @@ private fun ExamCard(exam: Exam, today: LocalDate, inTimetable: Boolean, modifie
                 if (!inTimetable) Text("(not in timetable)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(
                     exam.date.format(DATE_LABEL) + " · " + TimeUtils.formatFriendly(exam.timeMinutes) +
+                        (if (exam.effectiveDuration > 0) "–" + TimeUtils.formatFriendly((exam.timeMinutes + exam.effectiveDuration).coerceAtMost(24 * 60 - 1)) else "") +
+                        (if (exam.isOver(java.time.LocalDateTime.now())) " · ✅ Done" else "") +
                         if (exam.room.isNotBlank()) " · ${exam.room}" else "",
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -252,6 +256,7 @@ private fun ExamDialog(
     var room by remember { mutableStateOf(initial?.room ?: "") }
     var instructor by remember { mutableStateOf(initial?.instructor ?: (prefillCourse?.let { form.instructorFor[it] } ?: "")) }
     var notes by remember { mutableStateOf(initial?.notes ?: "") }
+    var duration by remember { mutableStateOf(initial?.durationMinutes ?: 0) }
 
     val duplicate = date != null && existing.any {
         it.id != initial?.id && it.course.equals(subject.trim(), ignoreCase = true) && it.examType == type && it.date == date
@@ -268,7 +273,8 @@ private fun ExamDialog(
         room = room.trim(),
         instructor = instructor.trim(),
         notes = notes.trim(),
-        createdEpochDay = initial?.createdEpochDay ?: today.toEpochDay()
+        createdEpochDay = initial?.createdEpochDay ?: today.toEpochDay(),
+        durationMinutes = duration
     )
 
     AlertDialog(
@@ -305,6 +311,14 @@ private fun ExamDialog(
                     TimeField("🕘 Time", time, form.slots, onChange = { time = it }, modifier = Modifier.weight(1f))
                     DropdownTextField("📍 Room", room, form.rooms + "TBA", { room = it }, modifier = Modifier.weight(1f))
                 }
+                // How long it lasts – after that it shows as ✅ Done and the next exam takes its place.
+                val durations = listOf(0, 30, 60, 90, 120, 150, 180, 240, 300, 360)
+                fun durLabel(m: Int): String = when {
+                    m == 0 -> "Default for ${type.label.lowercase()} (" + (if (type.defaultDuration == 0) "deadline" else "${type.defaultDuration / 60.0}".removeSuffix(".0") + " h") + ")"
+                    m < 60 -> "$m min"
+                    else -> "${m / 60.0}".removeSuffix(".0") + " h"
+                }
+                SelectField("⏱️ Duration", durLabel(duration), durations.map(::durLabel), { picked -> duration = durations.firstOrNull { durLabel(it) == picked } ?: 0 }, Modifier.fillMaxWidth())
                 DropdownTextField("👤 Instructor (optional)", instructor, form.instructorFor.values.distinct().sorted(), { instructor = it }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(notes, { notes = it }, label = { Text("📝 Syllabus / notes (optional)") }, modifier = Modifier.fillMaxWidth())
                 if (duplicate) Text("⚠️ You already have this exam on that date.", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)

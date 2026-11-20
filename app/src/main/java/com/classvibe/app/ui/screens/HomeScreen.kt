@@ -2,6 +2,7 @@ package com.classvibe.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -64,6 +65,9 @@ private sealed interface TodayRow {
 
 @Composable
 fun HomeScreen(
+    trainingNext: com.classvibe.app.data.TrainingDay? = null,
+    trainingTotal: Int = 0,
+    onOpenTraining: () -> Unit = {},
     classes: List<ClassSchedule>,
     exams: List<Exam>,
     attendance: List<AttendanceRecord>,
@@ -72,6 +76,7 @@ fun HomeScreen(
     now: LocalDateTime,
     update: UpdateInfo?,
     downloadProgress: Int?,
+    onOpenDownloads: () -> Unit = {},
     notificationsEnabled: Boolean,
     exactAlarmsAllowed: Boolean,
     onEnableNotifications: () -> Unit,
@@ -116,11 +121,35 @@ fun HomeScreen(
         if (!exactAlarmsAllowed) item {
             WarningBanner("Allow \"Alarms & reminders\" so reminders arrive exactly on time.", "Allow", onAllowExactAlarms)
         }
+        // 🎯 Placement training today / tomorrow
+        trainingNext?.let { t ->
+            val inDays = java.time.temporal.ChronoUnit.DAYS.between(now.toLocalDate(), t.date)
+            if (inDays in 0..1) item {
+                Card(
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = Cv.colors.brandText.copy(alpha = 0.14f)),
+                    modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenTraining)
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text(
+                            (if (inDays == 0L) "🎯 Training today" else "🎯 Training tomorrow") + " – ${t.label}",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            com.classvibe.app.parser.TimeUtils.formatFriendly(t.startMinutes) + " – " +
+                                com.classvibe.app.parser.TimeUtils.formatFriendly(t.endMinutes) + " • Day ${t.dayNumber} of $trainingTotal" +
+                                (if (t.venue.isNotBlank()) " • 📍 ${t.venue}" else ""),
+                            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
         if (holiday != null) item {
             WarningBanner("🏖️ ${holiday.label} – class reminders are paused today.", "Undo", { onRemoveHoliday(holiday) }, Cv.colors.accent)
         }
         if (update != null && !hideUpdate && update.tag != prefs.skippedVersion) item {
-            UpdateCard(update, downloadProgress, onUpdate = { onUpdate(update) }, onLater = { hideUpdate = true }, onSkip = { onSkipUpdate(update) })
+            UpdateCard(update, downloadProgress, onUpdate = { onUpdate(update) }, onLater = { hideUpdate = true }, onSkip = { onSkipUpdate(update) }, onOpenDownloads = onOpenDownloads)
         }
 
         // Weekend prep card
@@ -130,7 +159,8 @@ fun HomeScreen(
         }
 
         // Nearest exam
-        exams.filter { !it.date.isBefore(date) }.minByOrNull { it.epochDay * 10_000 + it.timeMinutes }?.let { exam ->
+        // Next exam that hasn't finished yet (a 9:30 lab exam disappears once its time is over).
+        exams.filter { !it.isOver(now) }.minByOrNull { it.epochDay * 10_000 + it.timeMinutes }?.let { exam ->
             val days = ChronoUnit.DAYS.between(date, exam.date)
             if (days <= 60) item { ExamCountdownCard(exam, days, onGoToExams) }
         }
@@ -296,7 +326,7 @@ private fun WeekendCard(exams: List<Exam>, onOpen: () -> Unit) {
 }
 
 @Composable
-private fun UpdateCard(info: UpdateInfo, progress: Int?, onUpdate: () -> Unit, onLater: () -> Unit, onSkip: () -> Unit) {
+private fun UpdateCard(info: UpdateInfo, progress: Int?, onUpdate: () -> Unit, onLater: () -> Unit, onSkip: () -> Unit, onOpenDownloads: () -> Unit) {
     Card(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
@@ -310,14 +340,20 @@ private fun UpdateCard(info: UpdateInfo, progress: Int?, onUpdate: () -> Unit, o
                 Text(com.classvibe.app.update.UpdateChecker.plainNotes(info.notes).take(400), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSecondaryContainer, maxLines = 6, overflow = TextOverflow.Ellipsis)
             }
             Spacer(Modifier.height(10.dp))
-            if (progress != null) {
+            if (progress != null && progress > 100) {
                 Text(
-                    if (progress > 100) "🔐 Verifying & installing… Android will ask you to tap Update" else "⬇️ Downloading ${info.apkName} – $progress%",
+                    "✅ Downloaded & safety-checked. Open ${info.apkName} in Downloads › ClassVibe and tap Update.",
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
                 Spacer(Modifier.height(6.dp))
-                if (progress > 100) androidx.compose.material3.LinearProgressIndicator(Modifier.fillMaxWidth())
-                else androidx.compose.material3.LinearProgressIndicator(progress = { progress / 100f }, modifier = Modifier.fillMaxWidth())
+                Button(onClick = onOpenDownloads) { Text("📂 Open Downloads") }
+            } else if (progress != null) {
+                Text(
+                    "⬇️ Downloading ${info.apkName} – $progress%",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                Spacer(Modifier.height(6.dp))
+                androidx.compose.material3.LinearProgressIndicator(progress = { progress / 100f }, modifier = Modifier.fillMaxWidth())
             } else Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Button(onClick = onUpdate) { Text("Update") }
                 OutlinedButton(onClick = onLater) { Text("Later") }

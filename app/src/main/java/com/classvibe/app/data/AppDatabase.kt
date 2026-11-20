@@ -13,9 +13,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         Exam::class,
         AttendanceRecord::class,
         Holiday::class,
-        CustomMessage::class
+        CustomMessage::class,
+        TrainingDay::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -25,10 +26,24 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun attendanceDao(): AttendanceDao
     abstract fun holidayDao(): HolidayDao
     abstract fun customMessageDao(): CustomMessageDao
+    abstract fun trainingDao(): TrainingDao
 
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
+
+        /** v2 -> v3 (ClassVibe 1.7): exam duration + placement-training days. */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `exam` ADD COLUMN `durationMinutes` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `training_day` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `dayNumber` INTEGER NOT NULL, " +
+                        "`epochDay` INTEGER NOT NULL, `startMinutes` INTEGER NOT NULL, `endMinutes` INTEGER NOT NULL, " +
+                        "`title` TEXT NOT NULL, `venue` TEXT NOT NULL, `status` TEXT NOT NULL DEFAULT '')"
+                )
+            }
+        }
 
         /** v1 (ClassVibe 1.0.x) -> v2: keeps the timetable, adds the new tables. */
         val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -70,7 +85,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "classvibe.db"
                 )
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .build()
                     .also { INSTANCE = it }
             }

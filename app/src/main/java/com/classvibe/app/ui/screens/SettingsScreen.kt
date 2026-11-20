@@ -43,6 +43,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -168,11 +169,11 @@ fun SettingsScreen(
                 SwitchRow("Class-ending nudge", "5 min before a class ends: what's next, other-block alert, attendance buttons", prefs.classEndNudge, vm::setClassEndNudge)
                 SwitchRow("Morning summary", "Today's classes + exam countdowns", prefs.morningSummary, vm::setMorningSummary)
                 if (prefs.morningSummary) TimeSelect("Morning summary time", prefs.morningSummaryMinutes, vm::setMorningTime)
-                Box {
-                    var testMenu by remember { mutableStateOf(false) }
-                    OutlinedButton(onClick = { testMenu = true }) { Text("🧪 Send a test notification…") }
-                    com.classvibe.app.ui.components.TestNotificationMenu(testMenu, { testMenu = false }) { vm.sendTestNotification(it) }
-                }
+                OutlinedButton(onClick = { vm.sendTestNotification(com.classvibe.app.ui.AppViewModel.TestKind.CLASS) }) { Text("🔔 Send a test class reminder") }
+                Text(
+                    "Tip: the 🔔 at the top tests whatever tab you're on – next class, next exam, attendance or training.",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
 
@@ -289,6 +290,61 @@ fun SettingsScreen(
                 HolidayAdder(onAdd = vm::addHoliday)
                 OutlinedButton(onClick = { vm.pauseToday() }) { Text("⏸️ Pause class reminders today") }
             }
+        }
+
+        // ------------------------------------------------ Placement training
+        item {
+            val trainingDays by vm.training.collectAsState()
+            var confirmReset by remember { mutableStateOf(false) }
+            SectionCard("🎯 Placement training", if (prefs.trainingEnabled) "On • ${trainingDays.size} days" else "Off") {
+                SwitchRow(
+                    "I'm in placement training",
+                    "Adds the training calendar, a Training tab in the dock and reminders",
+                    prefs.trainingEnabled, vm::setTrainingEnabled
+                )
+                if (prefs.trainingEnabled) {
+                    val first = trainingDays.firstOrNull()
+                    var start by remember(first?.startMinutes) { mutableStateOf<Int?>(first?.startMinutes ?: com.classvibe.app.data.DefaultTraining.DEFAULT_START) }
+                    var end by remember(first?.endMinutes) { mutableStateOf<Int?>(first?.endMinutes ?: com.classvibe.app.data.DefaultTraining.DEFAULT_END) }
+                    val slots = (7 * 60..19 * 60 step 30).toList()
+                    Text("Training time (all days)", style = MaterialTheme.typography.titleSmall)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        com.classvibe.app.ui.components.TimeField("Starts", start, slots, { start = it }, Modifier.weight(1f))
+                        com.classvibe.app.ui.components.TimeField("Ends", end, slots, { end = it }, Modifier.weight(1f))
+                    }
+                    OutlinedButton(
+                        enabled = start != null && end != null && end!! > start!!,
+                        onClick = { vm.setTrainingTimes(start!!, end!!) }
+                    ) { Text("Apply to all days") }
+                    HorizontalDivider()
+                    val eveningOptions = listOf(-1) + (17 * 60..22 * 60 step 30).toList()
+                    SelectField(
+                        "Reminder the evening before",
+                        if (prefs.trainingEveningMinutes < 0) "Off" else com.classvibe.app.parser.TimeUtils.formatFriendly(prefs.trainingEveningMinutes),
+                        eveningOptions.map { if (it < 0) "Off" else com.classvibe.app.parser.TimeUtils.formatFriendly(it) },
+                        { picked ->
+                            val v = eveningOptions.firstOrNull { (if (it < 0) "Off" else com.classvibe.app.parser.TimeUtils.formatFriendly(it)) == picked } ?: -1
+                            vm.setTrainingReminders(v, prefs.trainingLeadMinutes)
+                        },
+                        Modifier.fillMaxWidth()
+                    )
+                    val leadOptions = listOf(0, 15, 30, 45, 60, 90, 120)
+                    SelectField(
+                        "Reminder before it starts",
+                        if (prefs.trainingLeadMinutes <= 0) "Off" else "${prefs.trainingLeadMinutes} min before",
+                        leadOptions.map { if (it == 0) "Off" else "$it min before" },
+                        { picked -> vm.setTrainingReminders(prefs.trainingEveningMinutes, picked.substringBefore(' ').toIntOrNull() ?: 0) },
+                        Modifier.fillMaxWidth()
+                    )
+                    OutlinedButton(onClick = { vm.sendTestNotification(com.classvibe.app.ui.AppViewModel.TestKind.TRAINING) }) { Text("🔔 Send a test training reminder") }
+                    OutlinedButton(onClick = { confirmReset = true }) { Text("↺ Restore the default training dates") }
+                }
+            }
+            if (confirmReset) ConfirmDialog(
+                "Restore default dates?",
+                "Your training days (and their ✅/❌ marks) are replaced by the default ${com.classvibe.app.data.DefaultTraining.DATES.size}-day calendar.",
+                "Restore", vm::resetTrainingDefaults, { confirmReset = false }
+            )
         }
 
         // ------------------------------------------------ Appearance

@@ -85,6 +85,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     val classes: StateFlow<List<ClassSchedule>> = repo.observeClasses().state(emptyList())
     val exams: StateFlow<List<Exam>> = repo.observeExams().state(emptyList())
+    val training: StateFlow<List<com.classvibe.app.data.TrainingDay>> =
+        com.classvibe.app.data.AppDatabase.get(app).trainingDao().observeAll().state(emptyList())
     val attendance: StateFlow<List<AttendanceRecord>> = repo.observeAttendance().state(emptyList())
     val holidays: StateFlow<List<Holiday>> = repo.observeHolidays().state(emptyList())
     val customMessages: StateFlow<List<CustomMessage>> = repo.observeCustomMessages().state(emptyList())
@@ -133,6 +135,68 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun setTheme(mode: ThemeMode) = io { AppSettings.setTheme(context, mode) }
 
     fun setDockTransparency(value: Int) = io { AppSettings.setDockTransparency(context, value) }
+
+    // =============================================================== placement training
+
+    private val trainingDao get() = com.classvibe.app.data.AppDatabase.get(context).trainingDao()
+
+    /** Turn training on/off. First time on: the default training calendar is added. */
+    fun setTrainingEnabled(enabled: Boolean) = io {
+        AppSettings.update(context) {
+            it[AppSettings.Keys.TRAINING] = enabled
+            it[AppSettings.Keys.TRAINING_ASKED] = true
+        }
+        if (enabled && trainingDao.getAll().isEmpty()) trainingDao.insertAll(com.classvibe.app.data.DefaultTraining.days())
+        val p = AppSettings.get(context)
+        trainingDao.getAll().forEach {
+            if (enabled) com.classvibe.app.notifications.ReminderScheduler.scheduleTraining(context, it, p)
+            else com.classvibe.app.notifications.ReminderScheduler.cancelTraining(context, it.id)
+        }
+        toast(if (enabled) "🎯 Placement training added – ${trainingDao.getAll().size} days" else "Training tab hidden (your days are kept)")
+    }
+
+    fun dismissTrainingQuestion() = io { AppSettings.update(context) { it[AppSettings.Keys.TRAINING_ASKED] = true } }
+
+    fun saveTrainingDay(day: com.classvibe.app.data.TrainingDay) = io {
+        val id = trainingDao.upsert(day)
+        val saved = trainingDao.getById(if (day.id == 0L) id else day.id) ?: return@io
+        com.classvibe.app.notifications.ReminderScheduler.scheduleTraining(context, saved)
+    }
+
+    fun deleteTrainingDay(day: com.classvibe.app.data.TrainingDay) = io {
+        com.classvibe.app.notifications.ReminderScheduler.cancelTraining(context, day.id)
+        trainingDao.delete(day)
+    }
+
+    fun markTraining(day: com.classvibe.app.data.TrainingDay, status: String) = io {
+        trainingDao.upsert(day.copy(status = if (day.status == status) "" else status))
+    }
+
+    /** Replace all training days with the default calendar (keeps the chosen times). */
+    fun resetTrainingDefaults() = io {
+        val old = trainingDao.getAll()
+        old.forEach { com.classvibe.app.notifications.ReminderScheduler.cancelTraining(context, it.id) }
+        val start = old.firstOrNull()?.startMinutes ?: com.classvibe.app.data.DefaultTraining.DEFAULT_START
+        val end = old.firstOrNull()?.endMinutes ?: com.classvibe.app.data.DefaultTraining.DEFAULT_END
+        trainingDao.deleteAll()
+        trainingDao.insertAll(com.classvibe.app.data.DefaultTraining.days(start, end))
+        com.classvibe.app.notifications.ReminderScheduler.rescheduleTraining(context)
+        toast("Default training dates restored")
+    }
+
+    /** Same start/end time for every training day. */
+    fun setTrainingTimes(start: Int, end: Int) = io {
+        trainingDao.getAll().forEach { trainingDao.upsert(it.copy(startMinutes = start, endMinutes = end)) }
+        com.classvibe.app.notifications.ReminderScheduler.rescheduleTraining(context)
+    }
+
+    fun setTrainingReminders(eveningMinutes: Int, leadMinutes: Int) = io {
+        AppSettings.update(context) {
+            it[AppSettings.Keys.TRAINING_EVENING] = eveningMinutes
+            it[AppSettings.Keys.TRAINING_LEAD] = leadMinutes
+        }
+        com.classvibe.app.notifications.ReminderScheduler.rescheduleTraining(context)
+    }
 
     fun toggleLead(lead: Int) = io {
         val current = AppSettings.get(context).leadMinutes
@@ -303,7 +367,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     /** What the 🧪 test button sends. */
     enum class TestKind(val label: String) {
         CLASS("⏰ Class reminder"), CLASS_END("✅ Class-ending (attendance buttons)"),
-        EXAM("📝 Exam countdown"), MORNING("🌅 Morning summary")
+        EXAM("📝 Exam countdown"), MORNING("🌅 Morning summary"), TRAINING("🎯 Placement training")
     }
 
     /** The class a test is built from: on now → next today → next this week → a sample. */
@@ -369,7 +433,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 toast("Class-ending test sent 🔔")
             }
             TestKind.EXAM -> {
-                val exam = exams.value.filter { !it.date.isBefore(today) }.minByOrNull { it.epochDay }
+                val exam = exams.value.filter { !it.isOver(now) }.minByOrNull { it.startsAt }
                     ?: com.classvibe.app.data.Exam(
                         id = 9_997, type = "MID", customType = "", course = target.course, epochDay = today.plusDays(3).toEpochDay(),
                         timeMinutes = 10 * 60, room = target.room, instructor = target.instructor, notes = "", createdEpochDay = today.toEpochDay()
@@ -383,6 +447,19 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                     group = NotificationHelper.GROUP_TESTS
                 )
                 toast("Exam countdown test sent 📝")
+            }
+            TestKind.TRAINING -> {
+                val days = training.value
+                val day = com.classvibe.app.data.DefaultTraining.next(days, now) ?: days.lastOrNull()
+                    ?: com.classvibe.app.data.TrainingDay(id = 9_996, dayNumber = 1, epochDay = today.plusDays(1).toEpochDay(), startMinutes = 9 * 60, endMinutes = 16 * 60)
+                val built = ReminderContent.trainingReminder(day, maxOf(days.size, 1), evening = day.date.isAfter(today), now = now)
+                NotificationHelper.post(
+                    context, id, NotificationHelper.CH_CLASSES, "🧪 Test • " + built.title, built.body, built.bigText,
+                    subText = "Training reminder test • ${day.label}",
+                    countdownTo = day.startsAt.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli(),
+                    group = NotificationHelper.GROUP_TESTS
+                )
+                toast("Training reminder test sent for ${day.label} 🎯")
             }
             TestKind.MORNING -> {
                 val upcoming = exams.value.filter { !it.date.isBefore(today) && it.date.isBefore(today.plusDays(46)) }
@@ -535,6 +612,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
         if (manual) _updateStatus.value = "Checking…"
         val result = UpdateChecker.check(context, p.betaUpdates)
+        // Also notify from the app-open check (once per version) so nobody misses an update.
+        if (result is UpdateChecker.Result.Available && result.info.tag != p.skippedVersion) {
+            UpdateChecker.notifyAvailable(context, result.info)
+        }
         if (manual) {
             _updateStatus.value = when (result) {
                 is UpdateChecker.Result.Available -> "🚀 ${result.info.tag} is available!"
@@ -545,19 +626,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /** Download progress of an update: null = idle, 0..100 = downloading, 101 = verifying & installing. */
+    /** Download progress of an update: null = idle, 0..100 = downloading, 101 = verified & ready to install. */
     private val _downloadProgress = MutableStateFlow<Int?>(null)
     val downloadProgress: StateFlow<Int?> = _downloadProgress.asStateFlow()
-    private var pendingUpdate: UpdateInfo? = null
-
-    /** Tap on "Update": download → verify → install (one tap after the first-time permission). */
+    /**
+     * Tap on "Update": download → verify (SHA-256 + same signing key) → saved to Downloads/ClassVibe.
+     * Android's own installer (Files/Downloads app) installs it – ClassVibe never installs apps
+     * itself, which keeps Google Play Protect happy.
+     */
     fun downloadUpdate(info: UpdateInfo) = io {
-        if (!com.classvibe.app.update.UpdateInstaller.canInstall(context)) {
-            pendingUpdate = info
-            toast("Allow ClassVibe to install updates, then come back – the update starts by itself 👍")
-            try { com.classvibe.app.update.UpdateInstaller.openInstallPermission(context) } catch (e: Exception) { }
-            return@io
-        }
         try {
             val id = UpdateChecker.download(context, info)
             toast("⬇️ Downloading ${info.apkName}…")
@@ -568,13 +645,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /** Called when the app comes back to the foreground (e.g. from the permission screen). */
-    fun resumePendingUpdate() {
-        val info = pendingUpdate ?: return
-        if (com.classvibe.app.update.UpdateInstaller.canInstall(context)) {
-            pendingUpdate = null
-            downloadUpdate(info)
-        }
+    /** Opens Downloads so the user can tap the verified APK. */
+    fun openDownloads() {
+        try { UpdateChecker.openDownloads(context) } catch (e: Exception) { toast("Open your Files app › Downloads › ClassVibe") }
     }
 
     private suspend fun trackDownload(id: Long) {
@@ -596,7 +669,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             when (status) {
                 android.app.DownloadManager.STATUS_SUCCESSFUL -> {
                     _downloadProgress.value = 101
-                    kotlinx.coroutines.delay(15_000)
+                    kotlinx.coroutines.delay(60_000)
                     _downloadProgress.value = null
                     return
                 }

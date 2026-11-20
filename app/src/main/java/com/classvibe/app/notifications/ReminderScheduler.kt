@@ -14,6 +14,7 @@ import androidx.work.WorkManager
 import com.classvibe.app.data.AppDatabase
 import com.classvibe.app.data.AppPrefs
 import com.classvibe.app.data.AppSettings
+import com.classvibe.app.data.TrainingDay
 import com.classvibe.app.data.ClassSchedule
 import com.classvibe.app.data.Exam
 import java.time.LocalDateTime
@@ -32,7 +33,12 @@ import java.util.concurrent.TimeUnit
  */
 object ReminderScheduler {
 
-    enum class Kind { CLASS, CLASS_END, EXAM, WEEKEND, MORNING }
+    // New kinds go at the END: the ordinal is part of each alarm's request code.
+    enum class Kind { CLASS, CLASS_END, EXAM, WEEKEND, MORNING, TRAINING }
+
+    /** Training alarm "lead" values: evening before, and N minutes before it starts. */
+    const val TRAINING_EVENING = 1
+    const val TRAINING_BEFORE = 2
 
     const val EXTRA_KIND = "kind"
     const val EXTRA_ID = "id"
@@ -122,6 +128,33 @@ object ReminderScheduler {
 
     fun cancelExam(context: Context, examId: Long) = cancelAlarm(context, Kind.EXAM, examId, 0)
 
+    // ---------------- placement training ----------------
+
+    suspend fun scheduleTraining(context: Context, day: TrainingDay, prefs: AppPrefs? = null) {
+        val p = prefs ?: AppSettings.get(context)
+        cancelTraining(context, day.id)
+        if (!p.trainingEnabled || day.id <= 0) return
+        val now = LocalDateTime.now()
+        if (p.trainingEveningMinutes >= 0) {
+            val at = day.date.minusDays(1).atStartOfDay().plusMinutes(p.trainingEveningMinutes.toLong())
+            if (at.isAfter(now)) pendingIntent(context, Kind.TRAINING, day.id, TRAINING_EVENING, PendingIntent.FLAG_UPDATE_CURRENT)?.let { setAlarm(context, at, it) }
+        }
+        if (p.trainingLeadMinutes > 0) {
+            val at = day.startsAt.minusMinutes(p.trainingLeadMinutes.toLong())
+            if (at.isAfter(now)) pendingIntent(context, Kind.TRAINING, day.id, TRAINING_BEFORE, PendingIntent.FLAG_UPDATE_CURRENT)?.let { setAlarm(context, at, it) }
+        }
+    }
+
+    fun cancelTraining(context: Context, dayId: Long) {
+        cancelAlarm(context, Kind.TRAINING, dayId, TRAINING_EVENING)
+        cancelAlarm(context, Kind.TRAINING, dayId, TRAINING_BEFORE)
+    }
+
+    suspend fun rescheduleTraining(context: Context, prefs: AppPrefs? = null) {
+        val p = prefs ?: AppSettings.get(context)
+        AppDatabase.get(context).trainingDao().getAll().forEach { scheduleTraining(context, it, p) }
+    }
+
     // ---------------- weekend + morning ----------------
 
     suspend fun scheduleGlobal(context: Context, prefs: AppPrefs? = null) {
@@ -146,6 +179,7 @@ object ReminderScheduler {
         val prefs = AppSettings.get(context)
         db.scheduleDao().getAll().forEach { scheduleClass(context, it, prefs) }
         db.examDao().getAll().forEach { scheduleExam(context, it, prefs) }
+        db.trainingDao().getAll().forEach { scheduleTraining(context, it, prefs) }
         scheduleGlobal(context, prefs)
     }
 

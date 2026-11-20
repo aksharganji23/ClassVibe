@@ -38,6 +38,31 @@ object ReminderContent {
         "when" to TimeUtils.whenText(lead)
     )
 
+    /** Placement-training reminder (evening before, or shortly before it starts). */
+    fun trainingReminder(day: com.classvibe.app.data.TrainingDay, totalDays: Int, evening: Boolean, now: java.time.LocalDateTime): Built {
+        val time = "${TimeUtils.formatFriendly(day.startMinutes)} – ${TimeUtils.formatFriendly(day.endMinutes)}"
+        val left = java.time.Duration.between(now, day.startsAt).toMinutes().toInt().coerceAtLeast(0)
+        val title = if (evening) "🎯 Training tomorrow: ${day.label}" else "🎯 ${day.label} starts in ${leftText(left)}"
+        val lines = if (evening) listOf(
+            "Placement training tomorrow – charge the laptop, not just the excuses 🔋",
+            "Day ${day.dayNumber} of $totalDays tomorrow. Future-you's offer letter says thanks 💼",
+            "Set the alarm now. Tomorrow-you will be grateful (and on time) ⏰",
+            "Training tomorrow: notebook, pen, brain. Two out of three is not enough 🧠"
+        ) else listOf(
+            "Placement mode ON 💼 Recruiters don't do 'five more minutes'.",
+            "Day ${day.dayNumber}/$totalDays – one step closer to that offer letter 🚀",
+            "Leave now, thank yourself later. Training waits for no one ⏳",
+            "Aptitude, coding, confidence – pick all three today 💪"
+        )
+        val body = lines.random()
+        val details = buildString {
+            append("📅 ").append(day.date.format(java.time.format.DateTimeFormatter.ofPattern("EEE, d MMM"))).append(" • ").append(time)
+            if (day.venue.isNotBlank()) append("\n📍 ").append(day.venue)
+            append("\n🎯 Day ${day.dayNumber} of $totalDays")
+        }
+        return Built(title, body, body + "\n\n" + details, null)
+    }
+
     /** "57 min", "1 h 5 min", "2 days" */
     fun leftText(minutes: Int): String = when {
         minutes < 60 -> "$minutes min"

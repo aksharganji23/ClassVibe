@@ -3,6 +3,22 @@
 All notable changes to ClassVibe. Versions follow `MAJOR.MINOR.PATCH`.
 The release workflow copies the section for each tag into the GitHub Release notes.
 
+## [1.7.0] – Placement Ready 🎯
+
+> 1.6.0 was skipped (an accidental tag of the 1.5.0 code). If your phone shows 1.6.0, this update installs normally over it.
+
+### Added
+- **🎯 Placement training** – ClassVibe asks once whether you're in placement training (change it any time in ⚙️ Settings). If yes, the 18-day training calendar is added, a **Training tab** appears in the dock with every day listed and the next one highlighted (countdown, progress, ✅ attended / ❌ missed), and you get a reminder the evening before (8 PM) and an hour before each session. Days, times, topic and venue are editable; add or delete days, or restore the defaults.
+- **Exam duration** – each exam has a length (defaults by type: semester 3 h, mid 1.5 h, lab 3 h…). Once it's over it shows **✅ Done**, moves to Past and Today shows the next exam.
+- **"⬇️ Update now"** button on the new-version notification; you're notified **once per version**, also when you open the app.
+- **"Can't install?"** help on the website and README.
+
+### Changed
+- **Smart 🔔 test** – no menu: it tests what you're looking at. Today/Timetable → next class, Exams → next exam, Stats → class-ending (attendance), Training → next training day.
+- **The dock never hides** and the content scrolls clear above it; cleaner selected tab (no underline, the section name always centred).
+- **App icon** – the calendar is smaller with more space around it.
+- **Updates no longer use the "Install unknown apps" permission** (this is what made Play Protect say "Harmful app blocked"). The verified update is saved to Downloads/ClassVibe – tap it to install with Android's installer.
+
 ## [1.5.0] – Glass Dock 🧊
 
 ### Added

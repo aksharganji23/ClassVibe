@@ -28,6 +28,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
@@ -131,7 +132,8 @@ private enum class AppTab(val title: String, val icon: ImageVector) {
     TODAY("Today", Icons.Default.Home),
     TIMETABLE("Timetable", Icons.Default.DateRange),
     EXAMS("Exams", Icons.Default.Edit),
-    STATS("Stats", Icons.Default.Star)
+    STATS("Stats", Icons.Default.Star),
+    TRAINING("Training", Icons.Default.Build)
 }
 
 /** Full-screen pages opened on top of the tabs (back arrow / back gesture closes them). */
@@ -177,6 +179,7 @@ private fun MainScaffold(vm: AppViewModel, prefs: AppPrefs, requestedTab: Mutabl
     val scanState by vm.scan.collectAsStateWithLifecycle()
     val cloudBackup by vm.cloudBackup.collectAsStateWithLifecycle()
     val downloadProgress by vm.downloadProgress.collectAsStateWithLifecycle()
+    val training by vm.training.collectAsStateWithLifecycle()
     var overlay by rememberSaveable { mutableStateOf<Overlay?>(null) }
     var showNextClass by remember { mutableStateOf(false) }
     var openBunk by remember { mutableStateOf(false) }
@@ -185,7 +188,7 @@ private fun MainScaffold(vm: AppViewModel, prefs: AppPrefs, requestedTab: Mutabl
     val dockScroll = remember {
         object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
             override fun onPreScroll(available: androidx.compose.ui.geometry.Offset, source: androidx.compose.ui.input.nestedscroll.NestedScrollSource): androidx.compose.ui.geometry.Offset {
-                if (available.y < -6f) dockVisible = false else if (available.y > 6f) dockVisible = true
+                // The dock stays put (no hide-on-scroll).
                 return androidx.compose.ui.geometry.Offset.Zero
             }
         }
@@ -194,7 +197,8 @@ private fun MainScaffold(vm: AppViewModel, prefs: AppPrefs, requestedTab: Mutabl
         if (overlay == Overlay.IMPORT && importState.stage != ImportStage.PICK) importVm.discard() else overlay = null
     }
 
-    val tabs = AppTab.entries
+    // The Training tab only appears for students who opted in.
+    val tabs = if (prefs.trainingEnabled) AppTab.entries else AppTab.entries.filter { it != AppTab.TRAINING }
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     LaunchedEffect(pagerState.currentPage, overlay) { dockVisible = true }
     var prefillExamCourse by remember { mutableStateOf<String?>(null) }
@@ -227,7 +231,6 @@ private fun MainScaffold(vm: AppViewModel, prefs: AppPrefs, requestedTab: Mutabl
         val nowExact = ReminderScheduler.canScheduleExact(context)
         if (nowExact && !exactOk) ReminderScheduler.enqueueImmediateResync(context)
         exactOk = nowExact
-        vm.resumePendingUpdate()
     }
     val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         notificationsOk = granted && NotificationHelper.canPostNotifications(context)
@@ -291,12 +294,18 @@ private fun MainScaffold(vm: AppViewModel, prefs: AppPrefs, requestedTab: Mutabl
                     },
                     actions = {
                         if (overlay == null) {
-                            Box {
-                                var testMenu by remember { mutableStateOf(false) }
-                                IconButton(onClick = { testMenu = true }) {
-                                    Icon(Icons.Default.Notifications, contentDescription = "Send a test notification")
+                            // Test what you're looking at: Today/Timetable → next class, Exams → next exam,
+                            // Stats → class-ending (attendance), Training → next training day.
+                            IconButton(onClick = {
+                                val kind = when (tabs.getOrNull(pagerState.currentPage)) {
+                                    AppTab.EXAMS -> com.classvibe.app.ui.AppViewModel.TestKind.EXAM
+                                    AppTab.STATS -> com.classvibe.app.ui.AppViewModel.TestKind.CLASS_END
+                                    AppTab.TRAINING -> com.classvibe.app.ui.AppViewModel.TestKind.TRAINING
+                                    else -> com.classvibe.app.ui.AppViewModel.TestKind.CLASS
                                 }
-                                com.classvibe.app.ui.components.TestNotificationMenu(testMenu, { testMenu = false }) { vm.sendTestNotification(it) }
+                                vm.sendTestNotification(kind)
+                            }) {
+                                Icon(Icons.Default.Notifications, contentDescription = "Send a test notification for this tab")
                             }
                             IconButton(onClick = { overlay = Overlay.SETTINGS }) {
                                 Icon(Icons.Default.Settings, contentDescription = "Settings")
@@ -355,6 +364,10 @@ private fun MainScaffold(vm: AppViewModel, prefs: AppPrefs, requestedTab: Mutabl
                     ) {
                     when (tabs[page]) {
                         AppTab.TODAY -> HomeScreen(
+                            trainingNext = if (prefs.trainingEnabled) com.classvibe.app.data.DefaultTraining.next(training, now) else null,
+                            trainingTotal = training.size,
+                            onOpenTraining = { goTo(AppTab.TRAINING) },
+                            onOpenDownloads = { vm.openDownloads() },
                             classes = classes, exams = exams, attendance = attendance, holidays = holidays, prefs = prefs, now = now,
                             update = update, downloadProgress = downloadProgress,
                             notificationsEnabled = notificationsOk, exactAlarmsAllowed = exactOk,
@@ -388,13 +401,20 @@ private fun MainScaffold(vm: AppViewModel, prefs: AppPrefs, requestedTab: Mutabl
                             onSetBaseline = { c, a, h -> vm.setAttendanceBaseline(c, a, h) },
                             onFixMark = { r, st -> vm.fixMark(r, st) }
                         )
+                        AppTab.TRAINING -> com.classvibe.app.ui.screens.TrainingScreen(
+                            days = training, now = now,
+                            onSave = { vm.saveTrainingDay(it) },
+                            onDelete = { vm.deleteTrainingDay(it) },
+                            onMark = { d, st -> vm.markTraining(d, st) },
+                            onOpenSettings = { overlay = Overlay.SETTINGS }
+                        )
                     }
                     }
                     }
                     }
                     androidx.compose.animation.AnimatedVisibility(
                         visible = dockVisible,
-                        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 12.dp),
+                        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 20.dp),
                         enter = androidx.compose.animation.slideInVertically(androidx.compose.animation.core.spring(dampingRatio = 0.7f, stiffness = 300f)) { it * 2 } +
                             androidx.compose.animation.fadeIn(),
                         exit = androidx.compose.animation.slideOutVertically(androidx.compose.animation.core.tween(220)) { it * 2 } +
@@ -417,6 +437,23 @@ private fun MainScaffold(vm: AppViewModel, prefs: AppPrefs, requestedTab: Mutabl
                 }
             }
         }
+    }
+
+    // Asked once: is this student in placement training?
+    if (!prefs.trainingAsked && !showWhatsNew && overlay == null) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { },
+            title = { Text("🎯 Placement training?") },
+            text = {
+                Text(
+                    "Are you attending placement training? ClassVibe will add the training calendar " +
+                        "(${com.classvibe.app.data.DefaultTraining.DATES.size} days), show a Training tab and remind you the evening before " +
+                        "and before each session.\n\nYou can change this any time in ⚙️ Settings."
+                )
+            },
+            confirmButton = { androidx.compose.material3.TextButton(onClick = { vm.setTrainingEnabled(true) }) { Text("Yes, I'm in training") } },
+            dismissButton = { androidx.compose.material3.TextButton(onClick = { vm.dismissTrainingQuestion() }) { Text("No") } }
+        )
     }
 
     if (showNextClass) NextClassDialog(classes, attendance, holidays, prefs, now) { showNextClass = false }

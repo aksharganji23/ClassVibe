@@ -5,7 +5,6 @@
          accessibility or overlay permissions. -->
     <!-- One-tap updates: lets ClassVibe hand its own verified update to Android's installer.
          The user switches it on once ("Install unknown apps"). -->
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
@@ -78,9 +77,9 @@
             </intent-filter>
         </receiver>
 
-        <!-- Result of installing an update (sent by Android's PackageInstaller) -->
+        <!-- "Update now" button on the new-version notification -->
         <receiver
-            android:name=".update.InstallResultReceiver"
+            android:name=".update.UpdateActionReceiver"
             android:exported="false" />
 
         <!-- Home-screen widget -->

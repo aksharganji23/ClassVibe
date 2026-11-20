@@ -1,105 +1,83 @@
 package com.classvibe.app.update
 
-import android.app.PendingIntent
 import android.content.ContentValues
 import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageInstaller
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
-import android.provider.Settings
+import com.classvibe.app.BuildConfig
+import com.classvibe.app.data.AppSettings
+import com.classvibe.app.notifications.NotificationHelper
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import java.io.File
 
 /**
- * One-tap install of a verified update through Android's PackageInstaller.
+ * Puts a verified update where the user can install it with Android's own installer.
  *
- * - First time: Android asks the user to allow "Install unknown apps" for ClassVibe.
- * - Android then shows its "Update this app?" box (one tap).
- * - Android 12+: once ClassVibe has installed itself, later updates need no tap at all
- *   (USER_ACTION_NOT_REQUIRED – Android only allows it for the app's own installer).
- * - After the update Android restarts the app process; [UpdatedNotifier] posts
- *   "✅ Updated – tap to open" (Android doesn't let apps reopen themselves from the background).
+ * v1.7.0: ClassVibe no longer installs APKs itself (no REQUEST_INSTALL_PACKAGES, no
+ * PackageInstaller session). Apps that install other APKs are exactly what Google Play
+ * Protect flags as "Harmful app blocked", so the update is saved to Downloads/ClassVibe/
+ * and opened from the Files/Downloads app – the same way the very first install works.
  */
-object UpdateInstaller {
+object UpdateFiles {
 
-    const val ACTION_INSTALL_RESULT = "com.classvibe.app.INSTALL_RESULT"
-    const val EXTRA_TAG = "tag"
+    private val FOLDER = Environment.DIRECTORY_DOWNLOADS + "/ClassVibe/"
 
-    /** Whether the user has allowed ClassVibe to install updates. */
-    fun canInstall(context: Context): Boolean =
-        Build.VERSION.SDK_INT < Build.VERSION_CODES.O || context.packageManager.canRequestPackageInstalls()
-
-    /** Opens the "Install unknown apps" switch for ClassVibe. */
-    fun openInstallPermission(context: Context) {
-        val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${context.packageName}"))
-        } else {
-            Intent(Settings.ACTION_SECURITY_SETTINGS)
-        }
-        context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-    }
-
-    /** Hands the (already verified) APK to Android's package installer. */
-    fun install(context: Context, apk: File, tag: String) {
-        val installer = context.packageManager.packageInstaller
-        val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL).apply {
-            setAppPackageName(context.packageName)
-            setSize(apk.length())
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED)
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                setOriginatingUri(Uri.fromFile(apk))
-            }
-        }
-        val sessionId = installer.createSession(params)
-        installer.openSession(sessionId).use { session ->
-            session.openWrite("ClassVibe.apk", 0, apk.length()).use { out ->
-                apk.inputStream().use { it.copyTo(out, 64 * 1024) }
-                session.fsync(out)
-            }
-            val result = Intent(context, InstallResultReceiver::class.java)
-                .setAction(ACTION_INSTALL_RESULT)
-                .putExtra(EXTRA_TAG, tag)
-            val flags = PendingIntent.FLAG_UPDATE_CURRENT or
-                (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) PendingIntent.FLAG_MUTABLE else 0)
-            val pending = PendingIntent.getBroadcast(context, sessionId, result, flags)
-            session.commit(pending.intentSender)
-        }
-    }
-
-    /**
-     * Keeps a visible copy in Downloads/ClassVibe/ (Android 10+, no storage permission needed),
-     * so the file can be found and reinstalled by hand if anything goes wrong.
-     */
-    fun saveBackupCopy(context: Context, apk: File, name: String) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
-        try {
+    /** Copies the APK to Downloads/ClassVibe/ (Android 10+, no storage permission needed). */
+    fun saveToDownloads(context: Context, apk: File, name: String): Uri? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return null
+        return try {
             val resolver = context.contentResolver
             val collection = MediaStore.Downloads.EXTERNAL_CONTENT_URI
             // Replace an older copy with the same name (only files this app created are visible to it).
             resolver.delete(
                 collection,
                 "${MediaStore.MediaColumns.DISPLAY_NAME}=? AND ${MediaStore.MediaColumns.RELATIVE_PATH}=?",
-                arrayOf(name, BACKUP_PATH)
+                arrayOf(name, FOLDER)
             )
             val values = ContentValues().apply {
                 put(MediaStore.MediaColumns.DISPLAY_NAME, name)
                 put(MediaStore.MediaColumns.MIME_TYPE, "application/vnd.android.package-archive")
-                put(MediaStore.MediaColumns.RELATIVE_PATH, BACKUP_PATH)
+                put(MediaStore.MediaColumns.RELATIVE_PATH, FOLDER)
                 put(MediaStore.MediaColumns.IS_PENDING, 1)
             }
-            val uri = resolver.insert(collection, values) ?: return
+            val uri = resolver.insert(collection, values) ?: return null
             resolver.openOutputStream(uri)?.use { out -> apk.inputStream().use { it.copyTo(out) } }
             values.clear()
             values.put(MediaStore.MediaColumns.IS_PENDING, 0)
             resolver.update(uri, values, null, null)
+            uri
         } catch (e: Exception) {
-            // A backup copy is a nice-to-have; never block the update because of it.
+            null
         }
     }
 
-    private val BACKUP_PATH = Environment.DIRECTORY_DOWNLOADS + "/ClassVibe/"
+    /** Where the user should look for the file, in plain words. */
+    fun whereIsIt(): String =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) "Downloads › ClassVibe" else "the Downloads list"
+}
+
+/** Posts "✅ Updated – tap to open" once, after the app was replaced by a newer version. */
+object UpdatedNotifier {
+    fun notifyIfJustUpdated(context: Context) {
+        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            val raw = AppSettings.raw(context)
+            val tag = raw[AppSettings.Keys.DOWNLOAD_TAG] ?: return@launch
+            val installed = Semver.parse(BuildConfig.VERSION_NAME) ?: return@launch
+            val wanted = Semver.parse(tag) ?: return@launch
+            if (installed < wanted) return@launch
+            AppSettings.update(context) { it.remove(AppSettings.Keys.DOWNLOAD_TAG) }
+            NotificationHelper.post(
+                context, NotificationHelper.ID_UPDATE, NotificationHelper.CH_UPDATES,
+                "✅ ClassVibe updated to ${BuildConfig.VERSION_NAME}",
+                "Tap to open and see what's new 🎉",
+                contentIntent = NotificationHelper.openAppIntent(context, tab = 0),
+                category = androidx.core.app.NotificationCompat.CATEGORY_STATUS
+            )
+        }
+    }
 }

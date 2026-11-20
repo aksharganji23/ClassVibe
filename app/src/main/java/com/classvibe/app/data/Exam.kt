@@ -4,15 +4,15 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.time.LocalDate
 
-enum class ExamType(val label: String, val emoji: String) {
-    SEMESTER("Semester exam", "🎓"),
-    MID("Mid exam", "📝"),
-    LAB("Lab exam", "🔬"),
-    SLIP_TEST("Slip test", "✍️"),
-    QUIZ("Quiz", "❓"),
-    VIVA("Viva", "🎤"),
-    ASSIGNMENT("Assignment / submission", "📤"),
-    OTHER("Other", "📌");
+enum class ExamType(val label: String, val emoji: String, val defaultDuration: Int) {
+    SEMESTER("Semester exam", "🎓", 180),
+    MID("Mid exam", "📝", 90),
+    LAB("Lab exam", "🔬", 180),
+    SLIP_TEST("Slip test", "✍️", 30),
+    QUIZ("Quiz", "❓", 30),
+    VIVA("Viva", "🎤", 30),
+    ASSIGNMENT("Assignment / submission", "📤", 0),
+    OTHER("Other", "📌", 120);
 
     companion object {
         fun from(value: String): ExamType =
@@ -51,8 +51,16 @@ data class Exam(
     val room: String,
     val instructor: String,
     val notes: String,
-    val createdEpochDay: Long
+    val createdEpochDay: Long,
+    /** Length in minutes; 0 = use the default for the exam type. */
+    @androidx.room.ColumnInfo(defaultValue = "0") val durationMinutes: Int = 0
 ) {
+    /** Duration actually used (custom or the type's default). */
+    val effectiveDuration: Int get() = if (durationMinutes > 0) durationMinutes else examType.defaultDuration
+    val startsAt: java.time.LocalDateTime get() = date.atStartOfDay().plusMinutes(timeMinutes.toLong())
+    val endsAt: java.time.LocalDateTime get() = startsAt.plusMinutes(effectiveDuration.toLong())
+    /** Finished = its end time has passed. */
+    fun isOver(now: java.time.LocalDateTime): Boolean = !endsAt.isAfter(now)
     val examType: ExamType get() = ExamType.from(type)
     val date: LocalDate get() = LocalDate.ofEpochDay(epochDay)
     val typeLabel: String get() = if (examType == ExamType.OTHER && customType.isNotBlank()) customType else examType.label

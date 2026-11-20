@@ -38,6 +38,7 @@ class ClassReminderWorker(context: Context, params: WorkerParameters) : Coroutin
             ReminderScheduler.Kind.EXAM -> handleExam(id, prefs, now)
             ReminderScheduler.Kind.WEEKEND -> handleWeekend(prefs, now)
             ReminderScheduler.Kind.MORNING -> handleMorning(prefs, now)
+            ReminderScheduler.Kind.TRAINING -> handleTraining(id, lead, prefs, now)
         }
         NowNextWidget.requestUpdate(applicationContext)
         return Result.success()
@@ -145,6 +146,21 @@ class ClassReminderWorker(context: Context, params: WorkerParameters) : Coroutin
             }
         }
         ReminderScheduler.scheduleGlobal(applicationContext, prefs)
+    }
+
+    private suspend fun handleTraining(id: Long, lead: Int, prefs: AppPrefs, now: LocalDateTime) {
+        if (!prefs.trainingEnabled) return
+        val day = db.trainingDao().getById(id) ?: return
+        val all = db.trainingDao().getAll()
+        val built = ReminderContent.trainingReminder(day, all.size, evening = lead == ReminderScheduler.TRAINING_EVENING, now = now)
+        NotificationHelper.post(
+            applicationContext, NotificationHelper.trainingId(day.id), NotificationHelper.CH_CLASSES,
+            built.title, built.body, built.bigText,
+            subText = "Placement training • ${day.label}",
+            contentIntent = NotificationHelper.openAppIntent(applicationContext, tab = 4),
+            countdownTo = day.startsAt.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli(),
+            group = NotificationHelper.GROUP_TRAINING
+        )
     }
 
     private suspend fun handleMorning(prefs: AppPrefs, now: LocalDateTime) {

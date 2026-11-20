@@ -47,6 +47,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -60,11 +61,10 @@ import com.classvibe.app.ui.theme.Cv
 /** Extra bottom space screens add so their last item can scroll above the floating dock. */
 val LocalDockPadding = compositionLocalOf { 0.dp }
 
-/** Space the dock takes (height + margin); screens add this as bottom content padding. */
-val DOCK_SPACE: Dp = 96.dp
+/** Space the dock takes (height + margin + breathing room); screens add this as bottom content padding. */
+val DOCK_SPACE: Dp = 128.dp
 
-private val ITEM_W = 78.dp
-private val DOCK_H = 66.dp
+private val DOCK_H = 68.dp
 private val INNER = 6.dp
 
 data class DockItem(val label: String, val icon: ImageVector)
@@ -89,6 +89,8 @@ fun FloatingDock(
     val shape = RoundedCornerShape(30.dp)
     val brand = Cv.colors.brandText
     val haptic = LocalHapticFeedback.current
+    // 4 tabs → roomy; 5 tabs (with Training) → a little narrower so it fits every phone.
+    val ITEM_W = if (items.size > 4) 66.dp else 76.dp
     Box(
         modifier
             .shadow(18.dp, shape, ambientColor = Color.Black.copy(alpha = 0.25f), spotColor = Color.Black.copy(alpha = 0.35f))
@@ -115,9 +117,8 @@ fun FloatingDock(
         // Glowing pill that slides between tabs (and follows a swipe).
         Box(
             Modifier
-                .offset(x = INNER + ITEM_W * position.coerceIn(0f, (items.size - 1).toFloat()), y = INNER)
-                .size(ITEM_W, DOCK_H - INNER * 2)
-                .shadow(10.dp, RoundedCornerShape(24.dp), ambientColor = brand, spotColor = brand)
+                .offset(x = INNER + 2.dp + ITEM_W * position.coerceIn(0f, (items.size - 1).toFloat()), y = INNER)
+                .size(ITEM_W - 4.dp, DOCK_H - INNER * 2)
                 .clip(RoundedCornerShape(24.dp))
                 .background(
                     Brush.verticalGradient(listOf(brand.copy(alpha = if (dark) 0.34f else 0.20f), brand.copy(alpha = if (dark) 0.22f else 0.12f)))
@@ -154,16 +155,11 @@ fun FloatingDock(
                     verticalArrangement = Arrangement.Center
                 ) {
                     Icon(item.icon, contentDescription = item.label, tint = tint, modifier = Modifier.size(24.dp).scale(scale))
-                    AnimatedVisibility(
-                        visible = isSel,
-                        enter = fadeIn(tween(220)) + expandVertically(tween(220)),
-                        exit = fadeOut(tween(120)) + shrinkVertically(tween(160))
-                    ) {
-                        Text(
-                            item.label, color = tint, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
-                            modifier = Modifier.padding(top = 2.dp)
-                        )
-                    }
+                    val labelAlpha by animateFloatAsState(if (isSel) 1f else 0f, tween(220), label = "dockLabel")
+                    Text(
+                        item.label, color = tint, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
+                        modifier = Modifier.padding(top = 3.dp).graphicsLayer { alpha = labelAlpha }
+                    )
                 }
             }
         }
