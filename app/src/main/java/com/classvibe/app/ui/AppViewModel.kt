@@ -132,6 +132,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setTheme(mode: ThemeMode) = io { AppSettings.setTheme(context, mode) }
 
+    fun setDockTransparency(value: Int) = io { AppSettings.setDockTransparency(context, value) }
+
     fun toggleLead(lead: Int) = io {
         val current = AppSettings.get(context).leadMinutes
         val updated = if (lead in current) current - lead else current + lead
@@ -298,14 +300,16 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun deleteCustomMessage(m: CustomMessage) = io { repo.deleteCustomMessage(m) }
 
-    fun sendTestNotification() = io {
-        if (!NotificationHelper.canPostNotifications(context)) { toast("Notifications are off – allow them in Settings 🔕"); return@io }
-        val p = AppSettings.get(context)
-        val now = LocalDateTime.now()
-        val today = now.toLocalDate()
-        val nowMin = now.hour * 60 + now.minute
+    /** What the 🧪 test button sends. */
+    enum class TestKind(val label: String) {
+        CLASS("⏰ Class reminder"), CLASS_END("✅ Class-ending (attendance buttons)"),
+        EXAM("📝 Exam countdown"), MORNING("🌅 Morning summary")
+    }
+
+    /** The class a test is built from: on now → next today → next this week → a sample. */
+    private fun testTarget(today: LocalDate, nowMin: Int): ClassSchedule {
         val all = classes.value
-        val target = all.firstOrNull { it.dayOfWeek == today.dayOfWeek.value && nowMin in it.startMinutes until it.endMinutes }
+        return all.firstOrNull { it.dayOfWeek == today.dayOfWeek.value && nowMin in it.startMinutes until it.endMinutes }
             ?: all.filter { it.dayOfWeek == today.dayOfWeek.value && it.startMinutes > nowMin }.minByOrNull { it.startMinutes }
             ?: all.minByOrNull { c ->
                 val ahead = (c.dayOfWeek - today.dayOfWeek.value + 7) % 7
@@ -316,26 +320,81 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 course = "Artificial Intelligence and Deep Learning", classType = "Lecture",
                 room = "1205-BL1-SF", instructor = "Ms. Jyoshmadevi Kusumba"
             )
-        val lead = p.leadMinutes.filter { it > 0 }.minOrNull() ?: 10
+    }
+
+    fun sendTestNotification(kind: TestKind = TestKind.CLASS) = io {
+        if (!NotificationHelper.canPostNotifications(context)) { toast("Notifications are off – allow them in Settings 🔕"); return@io }
+        val p = AppSettings.get(context)
+        val now = LocalDateTime.now()
+        val today = now.toLocalDate()
+        val nowMin = now.hour * 60 + now.minute
+        val all = classes.value
+        val target = testTarget(today, nowMin)
         val todays = all.filter { it.dayOfWeek == today.dayOfWeek.value }.sortedBy { it.startMinutes }
-        // Minutes until this class's next start (0 if it's on right now).
-        val ahead = (target.dayOfWeek - today.dayOfWeek.value + 7) % 7
-        val minutesLeft = when {
-            ahead == 0 && nowMin in target.startMinutes until target.endMinutes -> 0
-            ahead == 0 && target.startMinutes > nowMin -> target.startMinutes - nowMin
-            else -> (if (ahead == 0) 7 else ahead) * 1440 + target.startMinutes - nowMin
+        val id = NotificationHelper.nextTestId()
+        when (kind) {
+            TestKind.CLASS -> {
+                val lead = p.leadMinutes.filter { it > 0 }.minOrNull() ?: 10
+                // Minutes until this class's next start (0 if it's on right now).
+                val ahead = (target.dayOfWeek - today.dayOfWeek.value + 7) % 7
+                val minutesLeft = when {
+                    ahead == 0 && nowMin in target.startMinutes until target.endMinutes -> 0
+                    ahead == 0 && target.startMinutes > nowMin -> target.startMinutes - nowMin
+                    else -> (if (ahead == 0) 7 else ahead) * 1440 + target.startMinutes - nowMin
+                }
+                val built = ReminderContent.classReminder(context, target, lead, today, p, todays, attendance.value, minutesLeft)
+                val startAt = System.currentTimeMillis() + minutesLeft * 60_000L
+                NotificationHelper.post(
+                    context, id, NotificationHelper.CH_CLASSES,
+                    "🧪 Test • " + built.title, built.body, built.bigText,
+                    subText = "Class reminder test • " + if (minutesLeft > 0) "${target.startTimeText} • in ${ReminderContent.leftText(minutesLeft)}" else "now",
+                    actions = com.classvibe.app.notifications.RateActionReceiver.actions(context, built.messageId),
+                    countdownTo = if (minutesLeft in 1..(24 * 60)) startAt else null,
+                    group = NotificationHelper.GROUP_TESTS
+                )
+                toast("Class reminder test sent for ${target.course} 🔔")
+            }
+            TestKind.CLASS_END -> {
+                val next = todays.firstOrNull { it.startMinutes >= target.endMinutes - 5 && it.id != target.id }
+                val built = ReminderContent.classEnd(context, target, next, p)
+                NotificationHelper.post(
+                    context, id, NotificationHelper.CH_CLASSES, "🧪 Test • " + built.title, built.body, built.bigText,
+                    subText = "Class-ending test • nothing is saved",
+                    actions = listOf(
+                        NotificationHelper.Action("✅ Attended", com.classvibe.app.notifications.AttendanceActionReceiver.intent(context, target.id, target.course, today.toEpochDay(), AttendanceStatus.ATTENDED, id, test = true)),
+                        NotificationHelper.Action("❌ Missed", com.classvibe.app.notifications.AttendanceActionReceiver.intent(context, target.id, target.course, today.toEpochDay(), AttendanceStatus.MISSED, id, test = true))
+                    ),
+                    group = NotificationHelper.GROUP_TESTS
+                )
+                toast("Class-ending test sent 🔔")
+            }
+            TestKind.EXAM -> {
+                val exam = exams.value.filter { !it.date.isBefore(today) }.minByOrNull { it.epochDay }
+                    ?: com.classvibe.app.data.Exam(
+                        id = 9_997, type = "MID", customType = "", course = target.course, epochDay = today.plusDays(3).toEpochDay(),
+                        timeMinutes = 10 * 60, room = target.room, instructor = target.instructor, notes = "", createdEpochDay = today.toEpochDay()
+                    )
+                val daysLeft = java.time.temporal.ChronoUnit.DAYS.between(today, exam.date)
+                val r = com.classvibe.app.notifications.ExamReminder(now, com.classvibe.app.notifications.ExamReminderKind.MILESTONE, daysLeft)
+                val built = ReminderContent.examReminder(context, exam, r, p)
+                NotificationHelper.post(
+                    context, id, NotificationHelper.CH_EXAMS, "🧪 Test • " + built.title, built.body, built.bigText,
+                    subText = "Exam countdown test • ${exam.typeLabel}",
+                    group = NotificationHelper.GROUP_TESTS
+                )
+                toast("Exam countdown test sent 📝")
+            }
+            TestKind.MORNING -> {
+                val upcoming = exams.value.filter { !it.date.isBefore(today) && it.date.isBefore(today.plusDays(46)) }
+                val built = ReminderContent.morningSummary(context, today, todays, upcoming, null, p)
+                NotificationHelper.post(
+                    context, id, NotificationHelper.CH_SUMMARY, "🧪 Test • " + built.title, built.body, built.bigText,
+                    subText = "Morning summary test",
+                    group = NotificationHelper.GROUP_TESTS
+                )
+                toast("Morning summary test sent 🌅")
+            }
         }
-        val built = ReminderContent.classReminder(context, target, lead, today, p, todays, attendance.value, minutesLeft)
-        val startAt = System.currentTimeMillis() + minutesLeft * 60_000L
-        NotificationHelper.post(
-            context, NotificationHelper.nextTestId(), NotificationHelper.CH_CLASSES,
-            "🧪 Test • " + built.title, built.body, built.bigText,
-            subText = if (minutesLeft > 0) "${target.classType} • ${target.startTimeText} • in ${ReminderContent.leftText(minutesLeft)}" else "${target.classType} • now",
-            actions = com.classvibe.app.notifications.RateActionReceiver.actions(context, built.messageId),
-            countdownTo = if (minutesLeft in 1..(24 * 60)) startAt else null,
-            group = NotificationHelper.GROUP_CLASSES
-        )
-        toast("Test reminder sent for ${target.course} (${target.dayName} ${target.startTimeText}) 🔔")
     }
 
     // =============================================================== backup

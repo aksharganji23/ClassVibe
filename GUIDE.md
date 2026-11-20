@@ -254,7 +254,7 @@ Share the same Releases link with classmates. From now on they never need to dow
 
 ## Part L: Feature tour (where is everything)
 
-**Swipe left and right** between the four tabs. **⚙️** (top right) opens Settings, **🔔** sends a test reminder.
+**Swipe left and right** between the four tabs, or tap them in the **floating dock** at the bottom (it hides while you scroll down). **⚙️** (top right) opens Settings, **🔔** sends a test notification of the type you pick. Change the dock's see-through level in ⚙️ → 🎨 Appearance.
 
 1. **Today:**
    - live status of each class (upcoming, in progress, completed or cancelled), with a progress bar;

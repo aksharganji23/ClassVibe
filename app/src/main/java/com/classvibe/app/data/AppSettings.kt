@@ -68,6 +68,8 @@ data class ExamSchedule(val milestones: List<Int>, val dailyFinal: Int, val week
 /** Everything the user can configure. Defaults are the out-of-the-box experience. */
 data class AppPrefs(
     val themeMode: ThemeMode = ThemeMode.UNSET,
+    /** Bottom dock see-through amount, 0 (solid) … 85 (very transparent). */
+    val dockTransparency: Int = 30,
     // Class reminders
     val remindersEnabled: Boolean = true,
     val leadMinutes: Set<Int> = setOf(10),
@@ -120,6 +122,7 @@ object AppSettings {
 
     object Keys {
         val THEME = stringPreferencesKey("theme_mode")
+        val DOCK_TRANSPARENCY = intPreferencesKey("dock_transparency")
         val REMINDERS = booleanPreferencesKey("reminders_enabled")
         val LEADS = stringSetPreferencesKey("reminder_leads")
         val CLASS_END = booleanPreferencesKey("class_end_nudge")
@@ -170,6 +173,7 @@ object AppSettings {
 
     private fun fromPrefs(p: Preferences) = AppPrefs(
         themeMode = p[Keys.THEME]?.let { v -> ThemeMode.entries.firstOrNull { it.name == v } } ?: ThemeMode.UNSET,
+        dockTransparency = (p[Keys.DOCK_TRANSPARENCY] ?: 30).coerceIn(0, 85),
         remindersEnabled = p[Keys.REMINDERS] ?: true,
         leadMinutes = p[Keys.LEADS]?.mapNotNull { it.toIntOrNull() }?.toSet() ?: setOf(10),
         classEndNudge = p[Keys.CLASS_END] ?: true,
@@ -208,6 +212,8 @@ object AppSettings {
     // ---------- Convenience setters ----------
 
     suspend fun setTheme(context: Context, mode: ThemeMode) = update(context) { it[Keys.THEME] = mode.name }
+
+    suspend fun setDockTransparency(context: Context, value: Int) = update(context) { it[Keys.DOCK_TRANSPARENCY] = value.coerceIn(0, 85) }
 
     suspend fun setLeads(context: Context, leads: Set<Int>) =
         update(context) { it[Keys.LEADS] = leads.map { l -> l.toString() }.toSet() }

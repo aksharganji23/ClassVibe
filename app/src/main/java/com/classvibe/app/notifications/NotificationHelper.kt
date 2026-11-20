@@ -128,6 +128,7 @@ object NotificationHelper {
 
     const val GROUP_CLASSES = "classvibe_classes"
     const val GROUP_EXAMS = "classvibe_exams"
+    const val GROUP_TESTS = "classvibe_tests"
     private var testCounter = 0
 
     /** A fresh id for each test notification, so tests stack instead of replacing each other. */

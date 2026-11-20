@@ -39,10 +39,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -91,6 +89,12 @@ import com.classvibe.app.ui.screens.TimetableScreen
 import com.classvibe.app.ui.theme.ClassVibeTheme
 import com.classvibe.app.ui.theme.Cv
 import com.classvibe.app.util.AppShortcuts
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import com.classvibe.app.ui.components.DOCK_SPACE
+import com.classvibe.app.ui.components.DockItem
+import com.classvibe.app.ui.components.FloatingDock
+import com.classvibe.app.ui.components.LocalDockPadding
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
@@ -176,12 +180,23 @@ private fun MainScaffold(vm: AppViewModel, prefs: AppPrefs, requestedTab: Mutabl
     var overlay by rememberSaveable { mutableStateOf<Overlay?>(null) }
     var showNextClass by remember { mutableStateOf(false) }
     var openBunk by remember { mutableStateOf(false) }
+    // Floating dock hides while scrolling down and comes back when scrolling up.
+    var dockVisible by remember { mutableStateOf(true) }
+    val dockScroll = remember {
+        object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
+            override fun onPreScroll(available: androidx.compose.ui.geometry.Offset, source: androidx.compose.ui.input.nestedscroll.NestedScrollSource): androidx.compose.ui.geometry.Offset {
+                if (available.y < -6f) dockVisible = false else if (available.y > 6f) dockVisible = true
+                return androidx.compose.ui.geometry.Offset.Zero
+            }
+        }
+    }
     BackHandler(enabled = overlay != null) {
         if (overlay == Overlay.IMPORT && importState.stage != ImportStage.PICK) importVm.discard() else overlay = null
     }
 
     val tabs = AppTab.entries
     val pagerState = rememberPagerState(pageCount = { tabs.size })
+    LaunchedEffect(pagerState.currentPage, overlay) { dockVisible = true }
     var prefillExamCourse by remember { mutableStateOf<String?>(null) }
     var showWhatsNew by remember { mutableStateOf(prefs.lastSeenVersionCode < BuildConfig.VERSION_CODE) }
 
@@ -276,8 +291,12 @@ private fun MainScaffold(vm: AppViewModel, prefs: AppPrefs, requestedTab: Mutabl
                     },
                     actions = {
                         if (overlay == null) {
-                            IconButton(onClick = { vm.sendTestNotification() }) {
-                                Icon(Icons.Default.Notifications, contentDescription = "Send a test reminder")
+                            Box {
+                                var testMenu by remember { mutableStateOf(false) }
+                                IconButton(onClick = { testMenu = true }) {
+                                    Icon(Icons.Default.Notifications, contentDescription = "Send a test notification")
+                                }
+                                com.classvibe.app.ui.components.TestNotificationMenu(testMenu, { testMenu = false }) { vm.sendTestNotification(it) }
                             }
                             IconButton(onClick = { overlay = Overlay.SETTINGS }) {
                                 Icon(Icons.Default.Settings, contentDescription = "Settings")
@@ -286,40 +305,6 @@ private fun MainScaffold(vm: AppViewModel, prefs: AppPrefs, requestedTab: Mutabl
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
                 )
-                if (overlay == null) {
-                    TabRow(
-                        selectedTabIndex = pagerState.currentPage,
-                        containerColor = MaterialTheme.colorScheme.background,
-                        contentColor = brand,
-                        indicator = { positions ->
-                            if (positions.isNotEmpty()) {
-                                // Underline follows the finger while swiping between pages.
-                                val current = pagerState.currentPage.coerceIn(0, positions.lastIndex)
-                                val fraction = pagerState.currentPageOffsetFraction
-                                val target = (current + if (fraction > 0f) 1 else -1).coerceIn(0, positions.lastIndex)
-                                val f = abs(fraction)
-                                val left = lerp(positions[current].left, positions[target].left, f)
-                                val width = lerp(positions[current].width, positions[target].width, f)
-                                Box(
-                                    Modifier.fillMaxWidth().wrapContentSize(Alignment.BottomStart)
-                                        .offset(x = left).width(width).height(3.dp)
-                                        .background(brand, RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp))
-                                )
-                            }
-                        }
-                    ) {
-                        tabs.forEachIndexed { i, t ->
-                            Tab(
-                                selected = pagerState.currentPage == i,
-                                onClick = { scope.launch { pagerState.animateScrollToPage(i) } },
-                                text = { Text(t.title, maxLines = 1) },
-                                icon = { Icon(t.icon, contentDescription = null) },
-                                selectedContentColor = brand,
-                                unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
             }
         }
     ) { padding ->
@@ -355,7 +340,19 @@ private fun MainScaffold(vm: AppViewModel, prefs: AppPrefs, requestedTab: Mutabl
                     onDiscard = { importVm.discard() },
                     onSave = { importVm.save { overlay = null; goTo(AppTab.TODAY) } }
                 )
-                null -> HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
+                null -> Box(Modifier.fillMaxSize().nestedScroll(dockScroll)) {
+                    androidx.compose.runtime.CompositionLocalProvider(LocalDockPadding provides DOCK_SPACE) {
+                    HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
+                    // Premium page transition: neighbouring pages fade and shrink slightly while swiping.
+                    Box(
+                        Modifier.fillMaxSize().graphicsLayer {
+                            val o = abs((pagerState.currentPage - page) + pagerState.currentPageOffsetFraction).coerceIn(0f, 1f)
+                            alpha = 1f - 0.35f * o
+                            val sc = 1f - 0.06f * o
+                            scaleX = sc
+                            scaleY = sc
+                        }
+                    ) {
                     when (tabs[page]) {
                         AppTab.TODAY -> HomeScreen(
                             classes = classes, exams = exams, attendance = attendance, holidays = holidays, prefs = prefs, now = now,
@@ -390,6 +387,31 @@ private fun MainScaffold(vm: AppViewModel, prefs: AppPrefs, requestedTab: Mutabl
                             today = now.toLocalDate(), openBunkPlanner = openBunk,
                             onSetBaseline = { c, a, h -> vm.setAttendanceBaseline(c, a, h) },
                             onFixMark = { r, st -> vm.fixMark(r, st) }
+                        )
+                    }
+                    }
+                    }
+                    }
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = dockVisible,
+                        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 12.dp),
+                        enter = androidx.compose.animation.slideInVertically(androidx.compose.animation.core.spring(dampingRatio = 0.7f, stiffness = 300f)) { it * 2 } +
+                            androidx.compose.animation.fadeIn(),
+                        exit = androidx.compose.animation.slideOutVertically(androidx.compose.animation.core.tween(220)) { it * 2 } +
+                            androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(180))
+                    ) {
+                        FloatingDock(
+                            items = tabs.map { DockItem(it.title, it.icon) },
+                            position = pagerState.currentPage + pagerState.currentPageOffsetFraction,
+                            selected = pagerState.targetPage,
+                            transparency = prefs.dockTransparency,
+                            onSelect = { i ->
+                                scope.launch {
+                                    pagerState.animateScrollToPage(
+                                        i, animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.88f, stiffness = 380f)
+                                    )
+                                }
+                            }
                         )
                     }
                 }

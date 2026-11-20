@@ -111,7 +111,7 @@ fun TimetableScreen(
         }
 
         if (gridView) {
-            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 12.dp)) {
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 12.dp, end = 12.dp, bottom = com.classvibe.app.ui.components.LocalDockPadding.current)) {
                 WeeklyGrid(allClasses, today, nowMinutes, onClick = { c -> editing = c to ClassDraft.fromEntity(c) })
                 Text(
                     "Tip: tap a class to edit it. Swipe the grid sideways to see more days.",
@@ -123,7 +123,7 @@ fun TimetableScreen(
         } else {
             LazyColumn(
                 state = listState,
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp + com.classvibe.app.ui.components.LocalDockPadding.current),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 byDay.forEach { (day, list) ->

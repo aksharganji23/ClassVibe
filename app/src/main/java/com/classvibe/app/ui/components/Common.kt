@@ -2,6 +2,7 @@ package com.classvibe.app.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -64,7 +65,14 @@ import java.util.Locale
 
 val DATE_LABEL: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE, d MMM yyyy", Locale.ENGLISH)
 
-/** Expandable "dropdown" settings section. */
+/**
+ * When provided (e.g. on the Settings page), SectionCards behave like an accordion:
+ * opening one closes the others. Holds the title of the open section (or null).
+ */
+val LocalAccordion = androidx.compose.runtime.compositionLocalOf<androidx.compose.runtime.MutableState<String?>?> { null }
+
+/** Expandable "dropdown" section with smooth open / close animations. */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun SectionCard(
     title: String,
@@ -72,16 +80,37 @@ fun SectionCard(
     initiallyExpanded: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    var expanded by rememberSaveable(title) { mutableStateOf(initiallyExpanded) }
-    val rotation by animateFloatAsState(if (expanded) 180f else 0f, label = "chevron")
+    val accordion = LocalAccordion.current
+    var localExpanded by rememberSaveable(title) { mutableStateOf(initiallyExpanded) }
+    val expanded = if (accordion != null) accordion.value == title else localExpanded
+    val toggle = {
+        if (accordion != null) accordion.value = if (expanded) null else title
+        else localExpanded = !localExpanded
+    }
+    val motion = androidx.compose.animation.core.tween<Float>(320, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+    val rotation by animateFloatAsState(if (expanded) 180f else 0f, motion, label = "chevron")
+    val container by androidx.compose.animation.animateColorAsState(
+        if (expanded) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surfaceContainer,
+        androidx.compose.animation.core.tween(320), label = "sectionColor"
+    )
+    val elevation by androidx.compose.animation.core.animateDpAsState(if (expanded) 3.dp else 0.dp, label = "sectionElevation")
+    val bring = remember { androidx.compose.foundation.relocation.BringIntoViewRequester() }
+    // Keep the section you just opened on screen (the one above may have just collapsed).
+    androidx.compose.runtime.LaunchedEffect(expanded) {
+        if (expanded && accordion != null) {
+            kotlinx.coroutines.delay(340)
+            bring.bringIntoView()
+        }
+    }
     Card(
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-        modifier = Modifier.fillMaxWidth()
+        colors = CardDefaults.cardColors(containerColor = container),
+        elevation = CardDefaults.cardElevation(defaultElevation = elevation),
+        modifier = Modifier.fillMaxWidth().bringIntoViewRequester(bring)
     ) {
-        Column(Modifier.animateContentSize()) {
+        Column {
             Row(
-                Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(horizontal = 18.dp, vertical = 16.dp),
+                Modifier.fillMaxWidth().clickable(onClick = toggle).padding(horizontal = 18.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(Modifier.weight(1f)) {
@@ -92,7 +121,16 @@ fun SectionCard(
                 }
                 Icon(Icons.Default.KeyboardArrowDown, contentDescription = if (expanded) "Collapse" else "Expand", modifier = Modifier.rotate(rotation))
             }
-            AnimatedVisibility(expanded) {
+            AnimatedVisibility(
+                visible = expanded,
+                enter = androidx.compose.animation.expandVertically(
+                    androidx.compose.animation.core.spring(dampingRatio = 0.9f, stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow),
+                    expandFrom = Alignment.Top
+                ) + androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(260, delayMillis = 60)) +
+                    androidx.compose.animation.slideInVertically(androidx.compose.animation.core.tween(300)) { -it / 10 },
+                exit = androidx.compose.animation.shrinkVertically(androidx.compose.animation.core.tween(260), shrinkTowards = Alignment.Top) +
+                    androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(160))
+            ) {
                 Column(Modifier.padding(start = 18.dp, end = 18.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp), content = content)
             }
         }
@@ -325,6 +363,20 @@ fun StatTile(value: String, label: String, modifier: Modifier = Modifier, color:
         Column(Modifier.padding(14.dp)) {
             Text(value, style = MaterialTheme.typography.headlineSmall, color = color)
             Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+/** Menu to pick which notification type to test. */
+@Composable
+fun TestNotificationMenu(expanded: Boolean, onDismiss: () -> Unit, onPick: (com.classvibe.app.ui.AppViewModel.TestKind) -> Unit) {
+    androidx.compose.material3.DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
+        Text(
+            "🧪 Send a test…", style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+        )
+        com.classvibe.app.ui.AppViewModel.TestKind.entries.forEach { k ->
+            androidx.compose.material3.DropdownMenuItem(text = { Text(k.label) }, onClick = { onDismiss(); onPick(k) })
         }
     }
 }

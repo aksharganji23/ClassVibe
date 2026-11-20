@@ -21,6 +21,12 @@ class AttendanceActionReceiver : BroadcastReceiver() {
         val course = intent.getStringExtra(EXTRA_COURSE).orEmpty()
         val status = intent.getStringExtra(EXTRA_STATUS)?.let { AttendanceStatus.from(it) } ?: return
         val notificationId = intent.getIntExtra(EXTRA_NOTIFICATION, 0)
+        if (intent.getBooleanExtra(EXTRA_TEST, false)) {
+            // Buttons on a test notification: show what would happen, save nothing.
+            androidx.core.app.NotificationManagerCompat.from(context).cancel(notificationId)
+            android.widget.Toast.makeText(context, "🧪 Test: would mark ${status.name.lowercase()} – nothing saved", android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
         if (classId <= 0 || epochDay < 0) return
 
         val pending = goAsync()
@@ -41,16 +47,18 @@ class AttendanceActionReceiver : BroadcastReceiver() {
         private const val EXTRA_COURSE = "course"
         private const val EXTRA_STATUS = "status"
         private const val EXTRA_NOTIFICATION = "notification_id"
+        private const val EXTRA_TEST = "test"
 
-        fun intent(context: Context, classId: Long, course: String, epochDay: Long, status: AttendanceStatus, notificationId: Int): PendingIntent {
+        fun intent(context: Context, classId: Long, course: String, epochDay: Long, status: AttendanceStatus, notificationId: Int, test: Boolean = false): PendingIntent {
             val i = Intent(context, AttendanceActionReceiver::class.java)
                 .setAction(ACTION)
-                .setData(Uri.parse("classvibe://attendance/$classId/$epochDay/${status.name}"))
+                .setData(Uri.parse("classvibe://attendance/$classId/$epochDay/${status.name}" + if (test) "/test/$notificationId" else ""))
                 .putExtra(EXTRA_CLASS, classId)
                 .putExtra(EXTRA_DAY, epochDay)
                 .putExtra(EXTRA_COURSE, course)
                 .putExtra(EXTRA_STATUS, status.name)
                 .putExtra(EXTRA_NOTIFICATION, notificationId)
+                .putExtra(EXTRA_TEST, test)
             return PendingIntent.getBroadcast(
                 context, (classId * 31 + status.ordinal).toInt(), i,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE

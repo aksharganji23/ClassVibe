@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -42,6 +43,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -133,6 +135,9 @@ fun SettingsScreen(
 
     LaunchedEffect(Unit) { vm.refreshRecentMessages() }
 
+    // Accordion: only one section open at a time.
+    val accordion = rememberSaveable { mutableStateOf<String?>("🔔 Class reminders") }
+    androidx.compose.runtime.CompositionLocalProvider(com.classvibe.app.ui.components.LocalAccordion provides accordion) {
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -163,7 +168,11 @@ fun SettingsScreen(
                 SwitchRow("Class-ending nudge", "5 min before a class ends: what's next, other-block alert, attendance buttons", prefs.classEndNudge, vm::setClassEndNudge)
                 SwitchRow("Morning summary", "Today's classes + exam countdowns", prefs.morningSummary, vm::setMorningSummary)
                 if (prefs.morningSummary) TimeSelect("Morning summary time", prefs.morningSummaryMinutes, vm::setMorningTime)
-                OutlinedButton(onClick = { vm.sendTestNotification() }) { Text("🔔 Send a test reminder") }
+                Box {
+                    var testMenu by remember { mutableStateOf(false) }
+                    OutlinedButton(onClick = { testMenu = true }) { Text("🧪 Send a test notification…") }
+                    com.classvibe.app.ui.components.TestNotificationMenu(testMenu, { testMenu = false }) { vm.sendTestNotification(it) }
+                }
             }
         }
 
@@ -297,6 +306,19 @@ fun SettingsScreen(
                         )
                     }
                 }
+                HorizontalDivider()
+                // Live preview while sliding; saved when you let go.
+                var dock by remember(prefs.dockTransparency) { mutableStateOf(prefs.dockTransparency.toFloat()) }
+                Text("Dock transparency: ${dock.toInt()}%", style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    "0% = solid • 85% = very see-through glass",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                androidx.compose.material3.Slider(
+                    value = dock, onValueChange = { dock = it }, valueRange = 0f..85f, steps = 16,
+                    onValueChangeFinished = { vm.setDockTransparency(dock.toInt()) }
+                )
+                com.classvibe.app.ui.components.DockPreview(dock.toInt())
             }
         }
 
@@ -370,6 +392,7 @@ fun SettingsScreen(
             }
         }
         item { Spacer(Modifier.height(32.dp)) }
+    }
     }
 
     if (confirmClear) ConfirmDialog("Clear timetable?", "All classes and their reminders will be removed. Exams and attendance stay.", "Clear", vm::clearTimetable, { confirmClear = false }, destructive = true)

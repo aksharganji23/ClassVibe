@@ -3,6 +3,18 @@
 All notable changes to ClassVibe. Versions follow `MAJOR.MINOR.PATCH`.
 The release workflow copies the section for each tag into the GitHub Release notes.
 
+## [1.5.0] – Glass Dock 🧊
+
+### Added
+- **Floating glass dock** – the four tabs moved to an iPhone-style dock at the bottom: frosted see-through look, a glowing pill that slides between tabs (and follows your swipe), icon bounce with a light haptic tick, and it hides while you scroll down.
+- **Dock transparency slider** (Settings → 🎨 Appearance) with a live preview.
+- **Test any notification** – the 🔔 button and Settings now ask what to test: class reminder, class-ending (✅/❌ – nothing is saved), exam countdown or morning summary.
+
+### Changed
+- **Settings sections open one at a time** (accordion) with smooth expand/collapse, a rotating arrow and the opened section scrolled into view.
+- Smoother page transitions when swiping between tabs.
+- Test notifications have their own group, so they never mix with real class or exam reminders.
+
 ## [1.4.0] – Roll Call 📋
 
 ### Added

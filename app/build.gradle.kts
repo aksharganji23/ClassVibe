@@ -16,7 +16,7 @@ plugins {
 // versionCode = MAJOR*1_000_000 + MINOR*10_000 + PATCH*100 + (beta number, or 99 for final)
 //   1.1.0-beta.1 -> 1010001     1.1.0 -> 1010099     1.2.3 -> 1020399
 // ---------------------------------------------------------------------------
-val appVersion: String = (project.findProperty("classvibe.version") as String?)?.removePrefix("v") ?: "1.4.0"
+val appVersion: String = (project.findProperty("classvibe.version") as String?)?.removePrefix("v") ?: "1.5.0"
 
 fun versionCodeOf(name: String): Int {
     val core = name.substringBefore('-')
