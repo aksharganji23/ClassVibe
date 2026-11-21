@@ -7,6 +7,8 @@ name: Release
 on:
   push:
     tags: [ "v*" ]
+  # Backup: Actions → Release → Run workflow → "Use workflow from" → Tags → pick the version tag.
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -17,6 +19,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
+      - name: Check this is a version tag
+        run: |
+          if [[ "$GITHUB_REF" != refs/tags/v* ]]; then
+            echo "::error::Run this from a version tag (Use workflow from → Tags → v1.x.y), not from a branch."
+            exit 1
+          fi
       - uses: actions/checkout@v4
 
       - name: Check signing secrets exist
