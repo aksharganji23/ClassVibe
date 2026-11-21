@@ -158,7 +158,7 @@ fun FloatingDock(
                     val labelAlpha by animateFloatAsState(if (isSel) 1f else 0f, tween(220), label = "dockLabel")
                     Text(
                         item.label, color = tint, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
-                        modifier = Modifier.padding(top = 3.dp).graphicsLayer { alpha = labelAlpha }
+                        modifier = Modifier.padding(top = 3.dp).graphicsLayer { this.alpha = labelAlpha }
                     )
                 }
             }

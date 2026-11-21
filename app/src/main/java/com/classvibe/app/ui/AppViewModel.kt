@@ -688,8 +688,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         AppSettings.update(context) { it[AppSettings.Keys.SKIPPED] = info.tag }
     }
 
-    fun openDownloads() = UpdateChecker.openDownloads(context)
-
     // =============================================================== helpers for UI
 
     fun isClassActiveToday(c: ClassSchedule, date: LocalDate, p: AppPrefs): Boolean =
